@@ -158,8 +158,8 @@ feature -- Visit nodes
 			end
 			append_text (">%N")
 			indent := indent + 1
-			append_note_tag (a_system)
 			append_description_tag (a_system.description)
+			append_note_tag (a_system)
 
 			Precursor (a_system)
 
@@ -1226,11 +1226,8 @@ feature {NONE} -- Implementation
 			-- Append `a_notes'.
 		require
 			a_notable_not_void: a_notable /= Void
-		local
-			l_note: detachable CONF_NOTE_ELEMENT
 		do
-			l_note := a_notable.note_node
-			if l_note /= Void then
+			if attached a_notable.note_node as l_note then
 				append_note_recursive (l_note)
 			end
 		end
@@ -1265,7 +1262,18 @@ feature {NONE} -- Implementation
 					l_attr.forth
 				end
 
-				if not a_note.is_empty then
+				if a_note.is_empty then
+					if attached a_note.content as l_content and then not l_content.is_whitespace then
+						append_text (">")
+						append_text_escaped (l_content, True)
+						indent := indent - 1
+						append_text ("</" + a_note.element_name +">%N")
+					else
+						indent := indent - 1
+						append_text ("/>%N")
+					end
+				else
+						--| note content is ignored here.
 					append_text (">%N")
 					across
 						a_note as ic
@@ -1274,15 +1282,12 @@ feature {NONE} -- Implementation
 					end
 					indent := indent - 1
 					append_text_indent ("</" + a_note.element_name +">%N")
-				else
-					indent := indent - 1
-					append_text ("/>%N")
 				end
 			end
 		end
 
 note
-	copyright:	"Copyright (c) 1984-2015, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2016, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

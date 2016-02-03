@@ -39,7 +39,6 @@ feature {NONE} -- Initialization
 		do
 			Precursor (n)
 			create attributes.make (0)
-			create content.make_empty
 			create element_name.make_empty -- Void-safety
 		end
 
@@ -55,14 +54,18 @@ feature {CONF_ACCESS} -- Element Change
 			attributes_set: attributes = a_attri
 		end
 
-	set_content (a_content: READABLE_STRING_GENERAL)
+	set_content (a_content: detachable READABLE_STRING_GENERAL)
 			-- Set `content' with `a_content'.
 		require
-			a_content_not_void: a_content /= Void
+			a_content_not_empty: a_content /= Void implies not a_content.is_whitespace
 		do
-			content := a_content.to_string_32
+			if a_content = Void then
+				content := Void
+			else
+				create content.make_from_string_general (a_content)
+			end
 		ensure
-			content_set: content = a_content
+			content_set: attached content as ct implies a_content.same_string (ct)
 		end
 
 	set_parent (a_parent: like parent)
@@ -91,7 +94,7 @@ feature -- Access
 	attributes: STRING_TABLE [STRING_32]
 			-- Attributes
 
-	content: STRING_32
+	content: detachable STRING_32
 			-- Content
 
 	parent: detachable CONF_NOTE_ELEMENT
@@ -100,10 +103,9 @@ feature -- Access
 invariant
 	element_name_not_void: element_name /= Void
 	attributes_not_void: attributes /= Void
-	content_not_void: content /= Void
 
 note
-	copyright: "Copyright (c) 1984-2014, Eiffel Software"
+	copyright: "Copyright (c) 1984-2016, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[
