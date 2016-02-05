@@ -2499,9 +2499,9 @@ feature {NONE} -- Implementation state transitions
 				-- => description
 				-- => note
 				-- => target
-			create l_trans.make (2)
-			l_trans.force (t_description, "description")
+			create l_trans.make (3)
 			l_trans.force (t_note, "note")
+			l_trans.force (t_description, "description")
 			l_trans.force (t_target, "target")
 			Result.force (l_trans, t_system)
 
