@@ -158,6 +158,8 @@ feature {NONE} -- Process
 				process_declaration_object
 			when t_templates then
 				process_templates
+			when t_context then
+				process_context
 			else
 			end
 		end
@@ -185,6 +187,8 @@ feature {NONE} -- Process
 				last_declaration := Void
 			when t_template then
 				process_templates_template
+			when t_conforms_to then
+				process_context_conforms_to
 			else
 			end
 		end
@@ -475,6 +479,29 @@ feature {NONE} -- Production processing
 			end
 		end
 
+	process_context
+			-- Processes the code template's context node.
+		require
+			last_code_template_definition_attached: attached last_code_template_definition
+		do
+			-- Do nothing
+		end
+
+	process_context_conforms_to
+			-- Processes a context conforms_to.
+		require
+			last_code_template_definition_attached: attached last_code_template_definition
+		local
+			l_definition: like last_code_template_definition
+			l_content: like current_content
+		do
+			l_content := current_content
+			if not l_content.is_empty then
+				l_definition := last_code_template_definition
+				check l_definition_attached: attached l_definition end
+				l_definition.context.context := l_content
+			end
+		end
 feature {NONE} -- Action handlers
 
 	on_error (a_msg: READABLE_STRING_32; a_line: NATURAL; a_char: NATURAL)
@@ -503,10 +530,12 @@ feature {NONE} -- Factory
 				-- => metadata
 				-- => declarations
 				-- => templates
-			create l_trans.make (3)
+				-- => context
+			create l_trans.make (4)
 			l_trans.force (t_metadata, {CODE_TEMPLATE_ENTITY_NAMES}.metadata_tag)
 			l_trans.force (t_declarations, {CODE_TEMPLATE_ENTITY_NAMES}.declarations_tag)
 			l_trans.force (t_templates, {CODE_TEMPLATE_ENTITY_NAMES}.templates_tag)
+			l_trans.force (t_context, {CODE_TEMPLATE_ENTITY_NAMES}.context_tag)
 			Result.force (l_trans, t_code_template)
 
 				-- metadata
@@ -523,11 +552,20 @@ feature {NONE} -- Factory
 			l_trans.force (t_categories, {CODE_TEMPLATE_ENTITY_NAMES}.categories_tag)
 			Result.force (l_trans, t_metadata)
 
-				-- categories
+			-- categories
 				-- => category
 			create l_trans.make (1)
 			l_trans.force (t_category, {CODE_TEMPLATE_ENTITY_NAMES}.category_tag)
 			Result.force (l_trans, t_categories)
+
+
+				-- context
+				-- => conforms_to
+			create l_trans.make (1)
+			l_trans.force (t_conforms_to, {CODE_TEMPLATE_ENTITY_NAMES}.conforms_to_tag)
+			Result.force (l_trans, t_context)
+
+
 
 				-- declarations
 				-- => literal
@@ -617,6 +655,9 @@ feature {NONE} -- Tag states
 	t_templates: NATURAL_8           = 0x0D
 	t_template: NATURAL_8            = 0x0E
 
+	t_context: NATURAL_8             = 0x0F
+	t_conforms_to: NATURAL_8         = 0x20
+
 feature {NONE} -- Attributes states
 
 	at_format: NATURAL_8             = 0x50
@@ -632,7 +673,7 @@ invariant
 	last_code_template_definition_attached: attached last_declaration implies attached last_code_template_definition
 
 ;note
-	copyright: "Copyright (c) 1984-2012, Eiffel Software"
+	copyright: "Copyright (c) 1984-2016, Eiffel Software"
 	license:   "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

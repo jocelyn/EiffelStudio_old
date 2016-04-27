@@ -4,8 +4,8 @@ note
 	]"
 	legal: "See notice at end of class."
 	status: "See notice at end of class.";
-	date: "$Date$";
-	revision: "$Revision$"
+	date: "$Date: 2013-05-20 21:05:33 -0300 (lu. 20 de may. de 2013) $";
+	revision: "$Revision: 92558 $"
 
 class
 	CODE_TEMPLATE_ENTITY_NAMES
@@ -45,6 +45,10 @@ feature -- Access
 
 	shortcut_tag: STRING = "shortcut"
 
+	context_tag: STRING = "context"
+
+	conforms_to_tag: STRING = "conforms_to"
+
 feature -- Attribute
 
 	conforms_to_attribute: STRING = "conforms_to"
@@ -78,7 +82,7 @@ feature -- Delimiters
 	template_end_delimiter: STRING = "#~"
 
 ;note
-	copyright: "Copyright (c) 1984-2009, Eiffel Software"
+	copyright: "Copyright (c) 1984-2016, Eiffel Software"
 	license:   "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

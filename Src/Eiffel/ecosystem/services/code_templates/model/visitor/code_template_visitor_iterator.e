@@ -51,10 +51,13 @@ feature {CODE_NODE} -- Processing
 			if is_applicable_visitation_entity (a_value.templates) then
 				process_code_template_collection (a_value.templates)
 			end
+			if is_applicable_visitation_entity (a_value.context) then
+				process_code_context (a_value.context)
+			end
 		end
 
 ;note
-	copyright:	"Copyright (c) 1984-2009, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2016, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

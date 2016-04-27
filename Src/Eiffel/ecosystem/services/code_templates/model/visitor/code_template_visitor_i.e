@@ -51,6 +51,16 @@ feature {CODE_NODE} -- Processing
 		deferred
 		end
 
+
+	process_code_context (a_value: CODE_CONTEXT)
+			-- Process object `a_value'.
+		require
+			is_interface_usable: is_interface_usable
+			a_value_attached: attached a_value
+			is_applicable_visitation_entity: is_applicable_visitation_entity (a_value)
+		deferred
+		end
+
 	process_code_object_declaration (a_value: CODE_OBJECT_DECLARATION)
 			-- Process object `a_value'.
 		require
@@ -128,7 +138,7 @@ feature {CODE_NODE} -- Query
 		end
 
 ;note
-	copyright:	"Copyright (c) 1984-2009, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2016, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

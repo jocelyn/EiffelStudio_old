@@ -40,6 +40,7 @@ feature {NONE} -- Initialization
 			set_metadata (a_factory.new_code_metadata (Current))
 			set_declarations (a_factory.new_code_declaration_collection (Current))
 			set_templates (a_factory.new_code_template_collection (Current))
+			set_context (a_factory.new_code_context (Current))
 		end
 
 feature -- Access
@@ -58,6 +59,9 @@ feature -- Access
 
 	templates: CODE_TEMPLATE_COLLECTION assign set_templates
 			-- Code templates (versioned and unversioned) for a given code file.
+
+	context: CODE_CONTEXT assign set_context
+			-- Code context to apply the template		
 
 feature {CODE_NODE} -- Access
 
@@ -106,6 +110,20 @@ feature -- Element change
 		ensure
 			templates_assigned: templates = a_templates
 			templates_parent_set: templates.parent = Current
+		end
+
+	set_context (a_context: like context)
+			-- Sets the code file's context.
+			--
+			-- `a_context': Code template context.
+		require
+			a_context_attached: attached a_context
+		do
+			context := a_context
+			a_context.parent := Current
+		ensure
+			context_assigned: context = a_context
+			a_context_parent_set: a_context.parent = Current
 		end
 
 feature -- Query
@@ -168,9 +186,9 @@ invariant
 	templates_attached: is_initialized implies attached templates
 	templates_parent_set: is_initialized implies templates.parent = Current
 	code_factory_attached: is_initialized implies attached code_factory
-
+	context_attached: is_initialized implies attached context
 ;note
-	copyright:	"Copyright (c) 1984-2009, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2016, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

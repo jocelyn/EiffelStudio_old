@@ -61,7 +61,6 @@ inherit
 			exit_complete_mode,
 			handle_tab_action,
 			complete_feature_call,
-			complete_template_call,
 			on_key_pressed,
 			calculate_completion_list_width,
 			prepare_auto_complete,
@@ -1772,22 +1771,6 @@ feature {NONE} -- Code completable implementation
 			text_displayed.complete_feature_call (completed, is_feature_signature, appended_character, remainder, not a_continue_completion)
 		end
 
-	complete_template_call (a_template: EB_TEMPLATE_FOR_COMPLETION)
-		local
-			l_template: STRING_32
-			l_modifier: ES_FEATURE_TEMPLATE_TEXT_AST_MODIFIER
-		do
-				-- Check if it's editable ...
-			back_delete_char
-			back_delete_char
-			l_template := a_template.code_text.twin
-			create l_modifier.make (a_template.e_feature, a_template.class_i)
-			l_modifier.prepare
-			l_modifier.update_feature (a_template.local_text, l_template)
-			l_modifier.commit
-			refresh
-		end
-
 	select_from_cursor_to_saved
 			-- Select from cursor position to saved cursor position
 		do
@@ -1865,7 +1848,7 @@ feature {NONE} -- Implementation: Internal cache
 			-- Note: Do not use directly!
 
 ;note
-	copyright: "Copyright (c) 1984-2016, Eiffel Software"
+	copyright: "Copyright (c) 1984-2014, Eiffel Software"
 	license:   "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"
 	copying: "[

@@ -65,23 +65,6 @@ feature -- Initialization
 			reset_after_search
 		end
 
-feature {NONE} -- Access
-
-	code_templates: attached DS_BILINEAR [attached CODE_TEMPLATE_DEFINITION]
-			-- Code template definitions for snippets.
-		require
-			code_template_catalog_is_service_available: code_template_catalog.is_service_available
-		local
-			l_categories: DS_ARRAYED_LIST [attached STRING]
-		do
-			create l_categories.make (2)
-			l_categories.put_last ({CODE_TEMPLATE_ENTITY_NAMES}.code_category)
-				-- TODO move to a constant class.
-				-- {CODE_TEMPLATE_ENTITY_NAMES}.snippet_category?
-			l_categories.put_last ("snippet")
-			Result := code_template_catalog.service.templates_by_category (l_categories, True)
-		end
-
 feature -- Analysis preparation
 
 	prepare_on_click_analysis

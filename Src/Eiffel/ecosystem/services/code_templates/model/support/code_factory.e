@@ -87,6 +87,19 @@ feature -- Factory
 			result_attached: Result /= Void
 		end
 
+	new_code_context (a_parent: CODE_TEMPLATE_DEFINITION): CODE_CONTEXT
+			-- Creates a code context section describing the code template conformance rules.
+			--
+			-- `a_parent': A parent template definition the context section will be a part of.
+			-- `Result': A context section.
+		require
+			a_parent_attached: a_parent /= Void
+		do
+			create Result.make (a_parent)
+		ensure
+			result_attached: Result /= Void
+		end
+
 	new_code_numeric_version (a_major, a_minor, a_revision, a_qfe: NATURAL_16): CODE_NUMERIC_VERSION
 			-- Creates a numerical code version.
 			--
@@ -245,7 +258,7 @@ feature -- Token factory
 		end
 
 ;note
-	copyright:	"Copyright (c) 1984-2012, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2016, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[
