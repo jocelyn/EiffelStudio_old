@@ -492,16 +492,18 @@ feature {NONE} -- Production processing
 		require
 			last_code_template_definition_attached: attached last_code_template_definition
 		local
-			l_definition: like last_code_template_definition
 			l_content: like current_content
 		do
 			l_content := current_content
 			if not l_content.is_empty then
-				l_definition := last_code_template_definition
-				check l_definition_attached: attached l_definition end
-				l_definition.context.context := l_content
+				if attached last_code_template_definition as l_definition then
+					l_definition.context.set_context (l_content)
+				else
+					check l_definition_attached: False end
+				end
 			end
 		end
+
 feature {NONE} -- Action handlers
 
 	on_error (a_msg: READABLE_STRING_32; a_line: NATURAL; a_char: NATURAL)

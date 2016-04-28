@@ -1780,7 +1780,7 @@ feature {NONE} -- Code completable implementation
 				-- Check if it's editable ...
 			back_delete_char
 			back_delete_char
-			l_template := a_template.code_text.twin
+			l_template := a_template.code_text
 			create l_modifier.make (a_template.e_feature, a_template.class_i)
 			l_modifier.prepare
 			l_modifier.update_feature (a_template.local_text, l_template)

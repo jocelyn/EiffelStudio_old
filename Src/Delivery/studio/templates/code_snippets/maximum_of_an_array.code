@@ -1,46 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <code_template format="1.0.0">
-   <metadata>
-      <title>Maximum of an array</title>
-      <description>Code snippet for maximum of an array</description>
-      <author>Eiffel Software</author>
-      <shortcut>snippets</shortcut>
-      <categories>
-         <category>Eiffel</category>
-         <category>code</category>
-         <category>snippet</category>
-      </categories>
-   </metadata>
-   
-   <declarations>
-      <object id="a" editable="True" conforms_to="ARRAY[COMPARABLE]">
-      </object>
-      <object id="target" editable="True" conforms_to="COMPARABLE">
-         <description>Where the result goes of type T and conforms COMPARABLE </description>
-      </object>
-      <object id="low" editable="True" conforms_to="INTEGER">
-         <description>Start index, default a.lower</description>
-      </object>
-      <object id="high" editable="True" conforms_to="INTEGER">
-         <description>End index, default a.upper</description>
-      </object>
-   </declarations>
-   
-   <context> 
-         <conforms_to>ARRAY[COMPARABLE]</conforms_to>
-   </context> 
-
-   <templates>
-      <template>
-            ${low}  := ${a}.lower
-            ${high} := ${a}.upper   
-            across
-               (${low} + 1) |..| ${high} as i
-            from
-               ${target} := ${a}[${low}]
-            loop
-               ${target} := ${target}.max (${a}[i.item])
-            end 
-      </template> 
-   </templates>
+	<metadata>
+		<title>Maximum of an array</title>
+		<description>Get the maximum of an array</description>
+		<author>Eiffel Software</author>
+		<shortcut>snippets</shortcut>
+		<categories>
+			<category>Eiffel</category>
+			<category>code</category>
+			<category>snippet</category>
+		</categories>
+	</metadata>
+	<declarations>
+		<object id="a" editable="True" conforms_to="ARRAY[COMPARABLE]">
+		</object>
+		<object id="target" editable="True" conforms_to="COMPARABLE">
+			<description>Where the result goes of type T and conforms COMPARABLE </description>
+		</object>
+		<object id="low" editable="True" conforms_to="INTEGER">
+			<description>Start index, default a.lower</description>
+		</object>
+		<object id="high" editable="True" conforms_to="INTEGER">
+			<description>End index, default a.upper</description>
+		</object>
+	</declarations>
+	<context> 
+			<conforms_to>ARRAY[COMPARABLE]</conforms_to>
+	</context> 
+	<templates>
+		<template>
+			${low}  := ${a}.lower
+			${high} := ${a}.upper
+			across
+				(${low} + 1) |..| ${high} as i
+			from
+				${target} := ${a}[${low}]
+			loop
+				${target} := ${target}.max (${a}[i.item])
+			end 
+		</template> 
+	</templates>
 </code_template>

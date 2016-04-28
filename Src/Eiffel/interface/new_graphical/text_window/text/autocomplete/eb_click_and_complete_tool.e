@@ -40,8 +40,8 @@ feature -- Initialization
 			can_analyze_current_class := False
 			if is_ok_for_completion then
 				initialize_context
-				if current_class_c /= Void then
-					generate_ast (current_class_c, after_save)
+				if attached current_class_c as cl_c then
+					generate_ast (cl_c, after_save)
 					can_analyze_current_class := current_class_as /= Void
 				end
 			end
@@ -67,19 +67,23 @@ feature -- Initialization
 
 feature {NONE} -- Access
 
-	code_templates: attached DS_BILINEAR [attached CODE_TEMPLATE_DEFINITION]
+	code_templates: DS_BILINEAR [CODE_TEMPLATE_DEFINITION]
 			-- Code template definitions for snippets.
 		require
-			code_template_catalog_is_service_available: code_template_catalog.is_service_available
+			code_template_catalog_is_service_available: code_template_catalog.service /= Void
 		local
-			l_categories: DS_ARRAYED_LIST [attached STRING]
+			l_categories: DS_ARRAYED_LIST [STRING]
 		do
 			create l_categories.make (2)
 			l_categories.put_last ({CODE_TEMPLATE_ENTITY_NAMES}.code_category)
 				-- TODO move to a constant class.
 				-- {CODE_TEMPLATE_ENTITY_NAMES}.snippet_category?
 			l_categories.put_last ("snippet")
-			Result := code_template_catalog.service.templates_by_category (l_categories, True)
+			if attached code_template_catalog.service as l_service then
+				Result := l_service.templates_by_category (l_categories, True)
+			else
+				create {DS_ARRAYED_LIST [CODE_TEMPLATE_DEFINITION]} Result.make_default
+			end
 		end
 
 feature -- Analysis preparation
@@ -123,7 +127,13 @@ feature -- Analysis preparation
 							next := token.next
 							create {EDITOR_TOKEN_FEATURE_START} tfs.make_with_pos (token.wide_image,
 								features_position.item.start_pos, features_position.item.end_pos)
-							if is_string (token) or else (attached {EDITOR_TOKEN_FEATURE_START} token as l_fst and then l_fst.text_color_id = l_fst.string_text_color_id) then
+							if
+								is_string (token)
+								or else (
+									attached {EDITOR_TOKEN_FEATURE_START} token as l_fst and then
+									l_fst.text_color_id = l_fst.string_text_color_id
+								)
+							then
 									-- This happens when processing a prefix/infix feature or reprocessing
 									-- the click text.
 								tfs.set_text_color_string
@@ -191,22 +201,29 @@ feature -- Analysis preparation
 		require
 			a_cursor_not_void: a_cursor /= Void
 		local
-			l_stone: FEATURE_STONE
+			l_stone: detachable FEATURE_STONE
 			l_current_feature_as: like feature_containing_cursor
 		do
 			current_cursor := a_cursor
 			current_line := current_cursor.line
 			current_token := a_cursor.token
-			current_feature_as := feature_containing_cursor (a_cursor)
-			l_current_feature_as := current_feature_as.twin
+			l_current_feature_as := feature_containing_cursor (a_cursor)
+			current_feature_as := l_current_feature_as
 			build_completion_list_analyse (current_token, current_cursor.pos_in_token)
-			if attached {SMART_TEXT} content as stext then
-					stext.find_feature_named (l_current_feature_as.name.visual_name)
-					if attached {FEATURE_STONE} stext.stone_at (stext.cursor) as l_fstone then
-						l_stone := l_fstone
-					end
+
+			if
+				attached {SMART_TEXT} content as stext and then
+				l_current_feature_as /= Void
+			then
+--WHY?				l_current_feature_as := current_feature_as.twin
+				stext.find_feature_named (l_current_feature_as.name.visual_name)
+				if attached {FEATURE_STONE} stext.stone_at (stext.cursor) as l_fstone then
+					l_stone := l_fstone
 				end
-			build_template_list (l_stone)
+			end
+			if l_stone /= Void then
+				build_template_list (l_stone)
+			end
 		end
 
 	build_class_completion_list (a_cursor: like current_cursor)
@@ -221,23 +238,28 @@ feature -- Analysis preparation
 			build_class_completion_list_analyse (current_token)
 		end
 
-	build_template_list (a_stone: FEATURE_STONE)
+	build_template_list (a_stone: detachable FEATURE_STONE)
 			-- Build feature template completion list
 		local
 			l_templates: like code_templates
 			l_template:  EB_TEMPLATE_FOR_COMPLETION
 		do
-			if last_type /= Void and then code_template_catalog.is_service_available then
+			if
+				a_stone /= Void and then
+				last_type /= Void and then
+				attached code_template_catalog.service as l_code_template_catalog_service
+			then
 				l_templates := filter_conformance_templates
 				from
 					l_templates.start
 				until
 					l_templates.after
 				loop
-					if attached {CODE_TEMPLATE} l_templates.item_for_iteration.applicable_item as l_code_template and then
-					   attached {CODE_TEMPLATE_DEFINITION} l_code_template.definition as l_template_definition and then
-					   attached {CODE_METADATA} l_template_definition.metadata as l_code_metadata and then
-					   attached l_code_metadata.title as l_code_tempalte_title
+					if
+						attached {CODE_TEMPLATE} l_templates.item_for_iteration.applicable_item as l_code_template and then
+						attached {CODE_TEMPLATE_DEFINITION} l_code_template.definition as l_template_definition and then
+						attached {CODE_METADATA} l_template_definition.metadata as l_code_metadata and then
+						attached l_code_metadata.title --as l_code_template_title
 					then
 						create l_template.make (l_code_template, a_stone)
 						l_template.set_class_i (current_class_i)
@@ -245,9 +267,9 @@ feature -- Analysis preparation
 						l_templates.forth
 					end
 				end
+				completion_possibilities := completion_possibilities.subarray (1, cp_index - 1)
+				completion_possibilities.sort
 			end
-			completion_possibilities := completion_possibilities.subarray (1, cp_index - 1)
-			completion_possibilities.sort
 		end
 
 feature -- Basic Operations
@@ -442,7 +464,13 @@ feature -- Click list update
 							next := token.next
 							create {EDITOR_TOKEN_FEATURE_START} tfs.make_with_pos (token.wide_image,
 								features_position.item.start_pos, features_position.item.end_pos)
-							if is_string (token) or else (attached {EDITOR_TOKEN_FEATURE_START} token as l_fst and then l_fst.text_color_id = l_fst.string_text_color_id) then
+							if
+								is_string (token)
+								or else (
+									attached {EDITOR_TOKEN_FEATURE_START} token as l_fst and then
+									l_fst.text_color_id = l_fst.string_text_color_id
+								)
+							then
 									-- This happens when processing a prefix/infix feature or reprocessing
 									-- the click text.
 								tfs.set_text_color_string
@@ -590,16 +618,20 @@ feature {NONE} -- Private Access : indexes
 
 feature {NONE} -- Helpers
 
-	frozen file_notifier: attached SERVICE_CONSUMER [FILE_NOTIFIER_S]
+	frozen file_notifier: SERVICE_CONSUMER [FILE_NOTIFIER_S]
 			-- Access to the file notifier service
 		once
 			create Result
+		ensure
+			Result /= Void
 		end
 
-	frozen code_template_catalog: attached SERVICE_CONSUMER [CODE_TEMPLATE_CATALOG_S]
+	frozen code_template_catalog: SERVICE_CONSUMER [CODE_TEMPLATE_CATALOG_S]
 			-- Access to the code template catalog service
 		once
 			create Result
+		ensure
+			Result /= Void
 		end
 
 feature {NONE} -- Code template conformance
@@ -607,8 +639,8 @@ feature {NONE} -- Code template conformance
 	filter_conformance_templates: like code_templates
 			-- List of code code templates filtered by conformance.
 		local
-			l_result: DS_ARRAYED_LIST [attached CODE_TEMPLATE_DEFINITION]
-			l_cursor: DS_BILINEAR_CURSOR [attached CODE_TEMPLATE_DEFINITION]
+			l_result: DS_ARRAYED_LIST [CODE_TEMPLATE_DEFINITION]
+			l_cursor: DS_BILINEAR_CURSOR [CODE_TEMPLATE_DEFINITION]
 			l_templates: like code_templates
 		do
 			create l_result.make_default
@@ -632,23 +664,20 @@ feature {NONE} -- Code template conformance
 		end
 
 	has_type_conformance (a_definition: CODE_TEMPLATE_DEFINITION): BOOLEAN
-			-- Is the current last_type conforms_to context definition in the template.
+			-- Is the current `last_type' conforms_to context definition in the template.
 		local
-			l_type_a: TYPE_A
-			l_string: STRING_32
-			sp: SHARED_EIFFEL_PARSER
-			l_tp: EIFFEL_PARSER
+			l_conform_to_string: STRING_32
 		do
-			l_string := a_definition.context.context
-			if not l_string.empty then
-				create sp
-				l_tp := sp.type_parser
-				l_tp.parse_from_string_32 ({STRING_32} "type " + l_string, Void)
+			l_conform_to_string := a_definition.context.context
+			if not l_conform_to_string.empty then
+				type_parser.parse_from_string_32 ({STRING_32} "type " + l_conform_to_string, Void)
 				if attached type_parser.type_node as l_class_type_as then
-					-- Convert TYPE_AS into TYPE_A.
-					l_type_a := type_a_generator.evaluate_type (l_class_type_as, written_class)
-					if last_type.conform_to (current_class_c, l_type_a) then
-						Result := True
+						-- Convert TYPE_AS into TYPE_A.
+					if
+						attached type_a_generator.evaluate_type (l_class_type_as, written_class) as l_type_a and then
+						attached last_type as l_last_type
+					then
+						Result := l_last_type.conform_to (current_class_c, l_type_a)
 					end
 				end
 			end

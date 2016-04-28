@@ -41,6 +41,7 @@ feature {NONE} -- Initialization
 	make (a_template: CODE_TEMPLATE; a_stone: FEATURE_STONE)
 			-- Create and initialize a new completion template using `a_template' ...
 		require
+			a_stone_not_void: a_stone /= Void
 			a_template_not_void: a_template /= Void
 		do
 			template := a_template
@@ -67,37 +68,31 @@ feature -- Access
 	template: CODE_TEMPLATE
 			-- Full template to insert in editor
 
-	code_text:  STRING_32
+	code_text: STRING_32
 			-- template code.
 		local
 			l_renderer: like template_renderer
 		do
 			l_renderer := template_renderer
 			l_renderer.render_template (template, code_symbol_table)
+				-- Note: it should be safe to use `l_renderer.code' directly without cloning the string.
 			create Result.make_from_string (l_renderer.code)
-			Result.append ("%N")
+			Result.append_character ('%N')
 		end
 
 	local_text: STRING_32
 			-- Local text.
-		local
-			l_string:  STRING
-			l_definitions: like local_definitions
 		do
-			l_definitions := local_definitions.twin
-			create Result.make_from_string ("%N%T")
-			from
-				l_definitions.start
-			until
-				l_definitions.after
+			create Result.make_empty
+			across
+				local_definitions as ic
 			loop
-				Result.append ("%T")
-				Result.append (l_definitions.key_for_iteration.as_string_32)
+				Result.append_string_general ("%N%T%T%T")
+				Result.append_string_general (ic.key)
 				Result.append (": ")
-				Result.append (l_definitions.item_for_iteration.as_string_32)
-				Result.append ("%N")
-				l_definitions.forth
+				Result.append_string_general (ic.item)
 			end
+			Result.append_character ('%N')
 		end
 
 	local_definitions: STRING_TABLE [STRING]

@@ -1,6 +1,9 @@
 note
-	description: "Summary description for {ES_FEATURE_TEMPLATE_TEXT_AST_MODIFIER}."
-	author: ""
+	description: "[
+			Specialization of {ES_FEATURE_TEXT_AST_MODIFIER} used by code template component(s).
+			
+			Mostly used to get "local" position.
+		]"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -8,15 +11,13 @@ class
 	ES_FEATURE_TEMPLATE_TEXT_AST_MODIFIER
 
 inherit
-
 	ES_FEATURE_TEXT_AST_MODIFIER
 
 create
 	make
 
 
-feature -- AST
-
+feature -- Access: AST
 
 	template_ast: detachable ROUTINE_AS
 		do
@@ -29,46 +30,55 @@ feature --  Access
 
 	local_insertion_position: INTEGER
 			-- <Precursor>
-		local
-			l_ast: like template_ast
-			l_locals: detachable LOCAL_DEC_LIST_AS
 		do
 			if attached {ROUTINE_AS} ast_feature.body.content as l_routine then
-				l_locals := l_routine.internal_locals
-				if attached l_locals then
+				if attached l_routine.internal_locals as l_locals then
 					Result := ast_position (l_locals).end_position + 2
 				else
-					-- No locals, use routine body
+						-- No locals, use routine body
 					Result := ast_position (l_routine.routine_body).start_position
 				end
+				if Result > 0 then
+					Result := modified_data.adjusted_position (Result)
+				end
 			end
-			Result := modified_data.adjusted_position (Result)
 		end
 
 	code_insertion_position: INTEGER
 		local
-			l_ast: like template_ast
-			l_routine_ast: ROUT_BODY_AS
-			l_kw: KEYWORD_AS
+			l_compound: detachable EIFFEL_LIST [INSTRUCTION_AS]
 		do
 			if attached {ROUTINE_AS} ast_feature.body.content as l_routine then
-				if l_routine.routine_body.is_empty then
-					l_kw := l_routine.end_keyword
+				if
+					l_routine.routine_body.is_empty and then
+					attached l_routine.end_keyword as l_kw
+				then
 					Result := ast_position (l_kw).start_position
-				elseif attached {DO_AS} l_routine.routine_body as l_body then
-					if attached l_body.compound as l_compound and then
-					   attached {INSTRUCTION_AS} l_compound.at (1) as l_instruccion then
-					   	Result := ast_position (l_instruccion).start_position
+				else
+					if attached {DO_AS} l_routine.routine_body as l_body then
+						l_compound := l_body.compound
+					elseif attached {ONCE_AS} l_routine.routine_body as l_body then
+						l_compound := l_body.compound
+					end
+
+					if
+						l_compound /= Void and then
+						attached {INSTRUCTION_AS} l_compound.at (1) as l_instruction
+					then
+					   	Result := ast_position (l_instruction).start_position
+					else
+							-- ?
 					end
 				end
+				if Result > 0 then
+					Result := modified_data.adjusted_position (Result)
+				end
 			end
-			Result := modified_data.adjusted_position (Result)
 		end
-
 
 feature -- Modifiy Code
 
-	update_feature (a_locals: STRING_32; a_template: STRING_32)
+	update_feature (a_locals: READABLE_STRING_GENERAL; a_template: READABLE_STRING_GENERAL)
 		local
 			l_local_pos: INTEGER
 			l_body_pos: INTEGER
