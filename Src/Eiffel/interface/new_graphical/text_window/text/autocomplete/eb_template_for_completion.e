@@ -98,7 +98,7 @@ feature -- Access
 			across
 				local_definitions as ic
 			loop
-				if l_arguments.has (ic.key) then
+				if l_arguments /= Void and then l_arguments.has (ic.key) then
 					if not l_code_tb.string_type_as_conformance (ic.item, l_locals.item (ic.key), class_c) then
 						Result.append_string_general ("%N%T%T%T")
 						Result.append_string_general (ic.key)
@@ -109,7 +109,7 @@ feature -- Access
 						-- for example b: STRING; b: INTEGER
 						-- we generate a new variable name for the template.
 					end
-				elseif l_locals.has (ic.key) then
+				elseif l_locals /= Void and then l_locals.has (ic.key) then
 						-- the current local variable conforms to the variable in the template
 					if not l_code_tb.string_type_as_conformance (ic.item, l_locals.item (ic.key), class_c) then
 						-- the current local variable does not conforms to the variable in the template
