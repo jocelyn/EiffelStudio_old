@@ -82,15 +82,67 @@ feature -- Access
 
 	local_text: STRING_32
 			-- Local text.
+		local
+			l_locals:  STRING_TABLE [TYPE_AS]
+			l_arguments: STRING_TABLE [TYPE_A]
+			l_code_tb: CODE_TEMPLATE_BUILDER
+			l_value: CODE_SYMBOL_VALUE
+			l_name: STRING_32
+			n: NATURAL
 		do
+			create l_code_tb
+			l_locals := l_code_tb.locals (e_feature)
+			l_arguments := l_code_tb.arguments (e_feature)
+
 			create Result.make_empty
 			across
 				local_definitions as ic
 			loop
-				Result.append_string_general ("%N%T%T%T")
-				Result.append_string_general (ic.key)
-				Result.append (": ")
-				Result.append_string_general (ic.item)
+				if l_arguments.has (ic.key) then
+					if not l_code_tb.string_type_as_conformance (ic.item, l_locals.item (ic.key), class_c) then
+						Result.append_string_general ("%N%T%T%T")
+						Result.append_string_general (ic.key)
+						Result.append (": ")
+						Result.append_string_general (ic.item)
+					else
+						-- the current local variable does not conforms to the variable in the template
+						-- for example b: STRING; b: INTEGER
+						-- we generate a new variable name for the template.
+					end
+				elseif l_locals.has (ic.key) then
+						-- the current local variable conforms to the variable in the template
+					if not l_code_tb.string_type_as_conformance (ic.item, l_locals.item (ic.key), class_c) then
+						-- the current local variable does not conforms to the variable in the template
+						-- for example b: STRING; b: INTEGER
+						-- we generate a new variable name for the template.
+						from
+							n := 1
+							create l_name.make_from_string_general (ic.key)
+							l_name.append_string_general (n.out)
+						until
+							not l_locals.has (l_name) and then not l_arguments.has (l_name)
+						loop
+							n := n + 1
+							l_name.append_string_general (n.out)
+						end
+						if code_symbol_table.has_id (ic.key.as_string_32) then
+							l_value := code_symbol_table.item (ic.key.as_string_32)
+							l_value.set_value (l_name)
+						end
+						internal_code_symbol_table := code_symbol_table
+						
+						Result.append_string_general ("%N%T%T%T")
+						Result.append_string_general (l_name)
+						Result.append (": ")
+						Result.append_string_general (ic.item)
+
+					end
+				else
+					Result.append_string_general ("%N%T%T%T")
+					Result.append_string_general (ic.key)
+					Result.append (": ")
+					Result.append_string_general (ic.item)
+				end
 			end
 			Result.append_character ('%N')
 		end

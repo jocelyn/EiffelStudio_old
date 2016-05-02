@@ -215,7 +215,6 @@ feature -- Analysis preparation
 				attached {SMART_TEXT} content as stext and then
 				l_current_feature_as /= Void
 			then
---WHY?				l_current_feature_as := current_feature_as.twin
 				stext.find_feature_named (l_current_feature_as.name.visual_name)
 				if attached {FEATURE_STONE} stext.stone_at (stext.cursor) as l_fstone then
 					l_stone := l_fstone
