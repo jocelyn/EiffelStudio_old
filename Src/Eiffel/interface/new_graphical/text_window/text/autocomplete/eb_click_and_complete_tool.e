@@ -668,7 +668,7 @@ feature {NONE} -- Code template conformance
 			l_conform_to_string: STRING_32
 		do
 			l_conform_to_string := a_definition.context.context
-			if not l_conform_to_string.empty then
+			if not l_conform_to_string.is_empty then
 				type_parser.parse_from_string_32 ({STRING_32} "type " + l_conform_to_string, Void)
 				if attached type_parser.type_node as l_class_type_as then
 						-- Convert TYPE_AS into TYPE_A.

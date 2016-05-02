@@ -130,7 +130,7 @@ feature -- Access
 							l_value.set_value (l_name)
 						end
 						internal_code_symbol_table := code_symbol_table
-						
+
 						Result.append_string_general ("%N%T%T%T")
 						Result.append_string_general (l_name)
 						Result.append (": ")
@@ -158,8 +158,10 @@ feature -- Access
 			l_cursor := l_declarations.new_cursor
 			if not l_declarations.is_empty then
 				from l_cursor.start until l_cursor.after loop
-					if not l_cursor.item.is_built_in and then attached {CODE_LITERAL_DECLARATION} l_cursor.item as l_literal and then
-					   attached {CODE_OBJECT_DECLARATION} l_literal as l_object
+					if
+						not l_cursor.item.is_built_in and then
+						attached {CODE_LITERAL_DECLARATION} l_cursor.item as l_literal and then
+						attached {CODE_OBJECT_DECLARATION} l_literal as l_object
 					then
 						Result.force (l_object.must_conform_to, l_object.id)
 					end

@@ -967,9 +967,11 @@ feature {NONE}-- Implementation
 
 	feature_part_at (a_token: EDITOR_TOKEN; a_line: EDITOR_LINE): INTEGER
 			-- find in which part of the feature body `a_token' is
+		require
+			a_line_attached: a_line /= Void
 		local
 			done: BOOLEAN
-			token: EDITOR_TOKEN
+			token: detachable EDITOR_TOKEN
 			line: EDITOR_LINE
 		do
 			Result := no_interesting_part
@@ -996,11 +998,11 @@ feature {NONE}-- Implementation
 					end
 				end
 				if token = line.first_token then
-					if line.previous = Void then
-						token := Void
-					else
-						line := line.previous
+					if attached line.previous as prev_line then
+						line := prev_line
 						token := line.eol_token
+					else
+						token := Void
 					end
 				else
 					token := token.previous

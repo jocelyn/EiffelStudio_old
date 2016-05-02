@@ -83,7 +83,7 @@ feature -- Conformance
 	string_type_as_conformance (a_string: STRING_32; a_type_as: TYPE_AS; a_class_c: CLASS_C): BOOLEAN
 			-- Is the type represented by `a_string' conforms_to type `a_type_as'
 		do
-			if not a_string.empty then
+			if not a_string.is_empty then
 				type_parser.parse_from_string_32 ({STRING_32} "type " + a_string, Void)
 				if attached type_parser.type_node as l_class_type_as then
 						-- Convert TYPE_AS into TYPE_A.
@@ -101,12 +101,12 @@ feature -- Conformance
 	string_type_a_conformance (a_string: STRING_32; a_type_a: TYPE_A; a_class_c: CLASS_C): BOOLEAN
 			-- Is the type represented by `a_string' conforms_to type `a_type_a'
 		do
-			if not a_string.empty then
+			if not a_string.is_empty then
 				type_parser.parse_from_string_32 ({STRING_32} "type " + a_string, Void)
 				if attached type_parser.type_node as l_class_type_as then
 						-- Convert TYPE_AS into TYPE_A.
 					if
-						attached type_a_generator.evaluate_type (l_class_type_as, a_class_c) as s_type_a 
+						attached type_a_generator.evaluate_type (l_class_type_as, a_class_c) as s_type_a
 					then
 						Result := a_type_a.conform_to (a_class_c, s_type_a)
 					end
