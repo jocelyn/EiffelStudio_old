@@ -203,6 +203,7 @@ feature -- Analysis preparation
 		local
 			l_stone: detachable FEATURE_STONE
 			l_current_feature_as: like feature_containing_cursor
+			n: INTEGER_32
 		do
 			current_cursor := a_cursor
 			current_line := current_cursor.line
@@ -212,17 +213,22 @@ feature -- Analysis preparation
 			build_completion_list_analyse (current_token, current_cursor.pos_in_token)
 
 			if
-				attached {SMART_TEXT} content as stext and then
-				l_current_feature_as /= Void
+				l_current_feature_as /= Void and
+				attached {SMART_TEXT} content as stext
 			then
+				n := a_cursor.pos_in_characters
 				stext.find_feature_named (l_current_feature_as.name.visual_name)
 				if attached {FEATURE_STONE} stext.stone_at (stext.cursor) as l_fstone then
 					l_stone := l_fstone
 				end
+				stext.cursor.go_to_position (n)
 			end
+
 			if l_stone /= Void then
 				build_template_list (l_stone)
 			end
+		ensure
+			same_cursor_position: a_cursor.pos_in_characters = old (a_cursor.pos_in_characters)
 		end
 
 	build_class_completion_list (a_cursor: like current_cursor)
@@ -246,7 +252,7 @@ feature -- Analysis preparation
 			if
 				a_stone /= Void and then
 				last_type /= Void and then
-				attached code_template_catalog.service as l_code_template_catalog_service
+				attached code_template_catalog.service -- Is interface useable?
 			then
 				l_templates := filter_conformance_templates
 				from
