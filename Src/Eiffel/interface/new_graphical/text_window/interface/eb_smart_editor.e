@@ -1776,6 +1776,7 @@ feature {NONE} -- Code completable implementation
 		local
 			l_template: STRING_32
 			l_modifier: ES_FEATURE_TEMPLATE_TEXT_AST_MODIFIER
+			l_code_editor: ES_CODE_EDITOR_LINKING
 		do
 				-- Check if it's editable ...
 			back_delete_char
@@ -1786,6 +1787,8 @@ feature {NONE} -- Code completable implementation
 			l_modifier.update_feature (a_template.local_text, l_template)
 			l_modifier.commit
 			refresh
+			create l_code_editor.make (a_template.stone)
+			l_code_editor.execute
 		end
 
 	select_from_cursor_to_saved
