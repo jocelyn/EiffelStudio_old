@@ -1,5 +1,5 @@
 note
-	description: "Object that enable to get tokens and linking tokens from a given feature"
+	description: "Get editor tokens and linking tokens from a given feature"
 	author: "javierv"
 	date: "$Date$"
 	revision: "$Revision$"
@@ -24,7 +24,8 @@ feature {NONE} -- Initialization
 			-- current feature stone.
 
 feature -- Access
-	linked_tokens: STRING_TABLE [LIST[INTEGER]]
+
+	linked_tokens: STRING_TABLE [LIST [INTEGER]]
 			-- tokens and their positions.	
 
 	content_tokens: LIST [EDITOR_TOKEN]
@@ -40,11 +41,19 @@ feature -- Access
 			else
 				create l_code_tb
 				create Result.make_caseless (5)
-				if attached {STRING_TABLE [TYPE_A]} l_code_tb.arguments (stone.e_feature) as l_arguments then
-					across l_arguments as c loop Result.force ("", c.key)  end
+				if attached l_code_tb.arguments (stone.e_feature) as l_arguments then
+					across
+						l_arguments as c
+					loop
+						Result.force ("", c.key)
+					end
 				end
-				if attached {STRING_TABLE [TYPE_AS]} l_code_tb.locals (stone.e_feature) as l_locals then
-					across l_locals as c loop Result.force ("", c.key)  end
+				if attached l_code_tb.locals (stone.e_feature) as l_locals then
+					across
+						l_locals as c
+					loop
+						Result.force ("", c.key)
+					end
 				end
 				internal_linking_definitions := Result
 			end
@@ -60,7 +69,7 @@ feature -- Execute
 			l_list: LIST [INTEGER]
 		do
 			create linked_tokens.make (5)
-			create {ARRAYED_LIST [EDITOR_TOKEN]}content_tokens.make (5)
+			create {ARRAYED_LIST [EDITOR_TOKEN]} content_tokens.make (5)
 			create l_scanner.make
 			from
 				l_scanner.execute (stone.origin_text) -- this is not the correct way.
@@ -74,12 +83,12 @@ feature -- Execute
 						if l_list /= Void then
 							l_list.force (l_token.pos_in_text)
 						else
-							create {ARRAYED_LIST[INTEGER]} l_list.make (1)
+							create {ARRAYED_LIST [INTEGER]} l_list.make (1)
 							l_list.force (l_token.pos_in_text)
 							linked_tokens.force (l_list, l_token.wide_image)
 						end
 					else
-						create {ARRAYED_LIST[INTEGER]} l_list.make (1)
+						create {ARRAYED_LIST [INTEGER]} l_list.make (1)
 						l_list.force (l_token.pos_in_text)
 						linked_tokens.force (l_list, l_token.wide_image)
 					end

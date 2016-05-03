@@ -172,9 +172,9 @@ feature -- Access
 
 	local_declarations: DS_BILINEAR [CODE_DECLARATION]
 			-- Declarations for a given code template.
-			do
-				Result := associated_template_definition.declarations.items
-			end
+		do
+			Result := associated_template_definition.declarations.items
+		end
 
 	icon: EV_PIXMAP
 			-- Associated icon based on data
@@ -237,7 +237,7 @@ feature -- Feature
 
 	stone: FEATURE_STONE
 		do
-			Result := internal_stone 
+			Result := internal_stone
 		end
 
 feature -- Status report
