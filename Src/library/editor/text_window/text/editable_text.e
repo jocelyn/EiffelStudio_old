@@ -1347,7 +1347,7 @@ feature {UNDO_CMD} -- Basic Text changes
 			record_first_modified_line (ln, tok)
 			record_last_modified_line (ln, tok)
 
-			aux := s.as_string_32.twin
+			create aux.make_from_string_general (s)
 			aux.prune_all ('%R')
 			if tok = ln.eol_token then
 				first_image := ln.wide_image
@@ -1378,19 +1378,19 @@ feature {UNDO_CMD} -- Basic Text changes
 			end
 			i := aux.index_of ('%N', 1)
 			if i = 0 then
-						-- No eol insertion.
-					end_pos := attached_cursor.x_in_characters + aux.count
-					lexer.set_in_verbatim_string (ln.part_of_verbatim_string)
-					if (first_image + aux + last_image).is_empty then
-						ln.make (is_windows_eol_style)
-					else
-						execute_lexer_with_wide_string (first_image + aux + last_image)
-						ln.rebuild_from_lexer_and_style (lexer, ln.part_of_verbatim_string, is_windows_eol_style)
-					end
-					on_line_modified (attached_cursor.y_in_lines)
+					-- No eol insertion.
+				end_pos := attached_cursor.x_in_characters + aux.count
+				lexer.set_in_verbatim_string (ln.part_of_verbatim_string)
+				if (first_image + aux + last_image).is_empty then
+					ln.make (is_windows_eol_style)
+				else
+					execute_lexer_with_wide_string (first_image + aux + last_image)
+					ln.rebuild_from_lexer_and_style (lexer, ln.part_of_verbatim_string, is_windows_eol_style)
+				end
+				on_line_modified (attached_cursor.y_in_lines)
 
 					-- reset pos_in_file values of tokens if possible
-					restore_tokens_properties (ln, ln)
+				restore_tokens_properties (ln, ln)
 			else
 				lexer.set_in_verbatim_string (ln.part_of_verbatim_string)
 				if (first_image + aux.substring (1, i - 1)).is_empty then
@@ -2198,7 +2198,7 @@ invariant
 	tabulation_symbol_valid: tabulation_symbol.count > 0
 
 note
-	copyright:	"Copyright (c) 1984-2013, Eiffel Software and others"
+	copyright:	"Copyright (c) 1984-2016, Eiffel Software and others"
 	license:	"Eiffel Forum License v2 (see http://www.eiffel.com/licensing/forum.txt)"
 	source: "[
 			Eiffel Software

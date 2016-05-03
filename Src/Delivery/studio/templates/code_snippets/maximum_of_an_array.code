@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <code_template format="1.0.0">
 	<metadata>
-		<title>Maximum of an array</title>
-		<description>Get the maximum of an array</description>
+		<title>Maximum of array</title>
+		<description>Get the maximum of array</description>
 		<author>Eiffel Software</author>
 		<shortcut>snippets</shortcut>
 		<categories>
@@ -25,7 +25,7 @@
 		</object>
 	</declarations>
 	<context> 
-			<conforms_to>ARRAY[COMPARABLE]</conforms_to>
+			<conforms_to>ARRAY [COMPARABLE]</conforms_to>
 	</context> 
 	<templates>
 		<template>

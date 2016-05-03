@@ -1775,16 +1775,84 @@ feature {NONE} -- Code completable implementation
 	complete_template_call (a_template: EB_TEMPLATE_FOR_COMPLETION)
 		local
 			l_template: STRING_32
-			l_modifier: ES_FEATURE_TEMPLATE_TEXT_AST_MODIFIER
+			l_pos, l_feat_pos: INTEGER
+			l_locals: READABLE_STRING_GENERAL
+			txt: like text_displayed
+			l_local_pos, l_start_pos, p: INTEGER
+--			l_mod: ES_FEATURE_TEMPLATE_TEXT_AST_MODIFIER
 		do
-				-- Check if it's editable ...
-			back_delete_char
-			back_delete_char
+			txt := text_displayed
+
+				-- Body
+			l_pos := txt.cursor.pos_in_characters
 			l_template := a_template.code_text
-			create l_modifier.make (a_template.e_feature, a_template.class_i)
-			l_modifier.prepare
-			l_modifier.update_feature (a_template.local_text, l_template)
-			l_modifier.commit
+
+				-- TODO: remove previous token!
+			if
+				attached txt.cursor.token.previous as prev and then prev.wide_image.same_string_general (".") and then
+				attached prev.previous as prev2
+			then
+				p := l_pos - prev2.wide_image.count - 2 + 1
+				txt.select_region (p, l_pos)
+				txt.delete_selection
+				l_pos := p
+				txt.go_to (p)
+				l_pos := p
+			else
+				txt.insert_string ("%N")
+				l_pos := l_pos + 1
+			end
+
+				-- Insert template body
+			txt.insert_string (l_template)
+			l_pos := l_pos + l_template.count
+			if {PLATFORM}.is_windows then
+				l_pos := l_pos + l_template.occurrences ('%N') -- missing %R ?
+			end
+
+				-- Locals
+			if attached a_template.e_feature as f then
+					-- FIXME: check for inline agent !
+				txt.find_feature_named (f.name_32)
+				if txt.found_feature then
+					l_locals := a_template.local_text
+					l_feat_pos := txt.cursor.pos_in_characters
+
+					txt.search_string_from_cursor ("local")
+					if txt.successful_search then
+						l_local_pos := txt.found_string_total_character_position
+					else
+						txt.cursor.go_to_position (l_feat_pos)
+						txt.search_string_from_cursor ("do")
+						if txt.successful_search then
+							l_start_pos := txt.found_string_total_character_position
+						end
+
+						txt.cursor.go_to_position (l_feat_pos)
+						txt.search_string_from_cursor ("once")
+						if txt.successful_search then
+							p := txt.found_string_total_character_position
+							l_start_pos := if l_start_pos = 0 then p else l_start_pos.min (p) end
+						end
+					end
+					if l_local_pos > 0 then
+						txt.cursor.go_to_position (l_local_pos + 5 + 2)  -- "local."
+						txt.insert_string (l_locals)
+						l_pos := l_pos + l_locals.count
+						if {PLATFORM}.is_windows then
+							l_pos := l_pos + l_locals.occurrences ('%N') -- missing %R ?
+						end
+					elseif l_start_pos > 0 then
+						txt.cursor.go_to_position (l_start_pos)
+						txt.insert_string ("%N%T%Tlocal%N")
+						txt.insert_string (l_locals)
+						txt.insert_string ("%N%T%T")
+						l_pos := l_pos + 9 + l_locals.count + 3
+					end
+				end
+			end
+			txt.cursor.go_to_position (l_pos)
+
 			refresh
 		end
 
