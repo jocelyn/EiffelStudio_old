@@ -1779,7 +1779,8 @@ feature {NONE} -- Code completable implementation
 			l_locals: READABLE_STRING_GENERAL
 			txt: like text_displayed
 			l_local_pos, l_start_pos, p: INTEGER
---			l_mod: ES_FEATURE_TEMPLATE_TEXT_AST_MODIFIER
+			l_modifier: ES_FEATURE_TEMPLATE_TEXT_AST_MODIFIER
+			l_code_editor: ES_CODE_EDITOR_LINKING
 		do
 			txt := text_displayed
 
@@ -1854,6 +1855,8 @@ feature {NONE} -- Code completable implementation
 			txt.cursor.go_to_position (l_pos)
 
 			refresh
+			create l_code_editor.make (a_template.stone)
+			l_code_editor.execute
 		end
 
 	select_from_cursor_to_saved
