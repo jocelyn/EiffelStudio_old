@@ -12,16 +12,18 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_stone: FEATURE_STONE)
+	make (a_text: READABLE_STRING_32; a_feature: E_FEATURE)
 			-- Create an instance with stone `a_stone'.
 		do
-			stone := a_stone
+			origin_text := a_text
+			e_feature := a_feature
 		ensure
-			stone_set:  stone = a_stone
+			associated_feature_set:  e_feature = a_feature
 		end
 
-	stone: FEATURE_STONE
-			-- current feature stone.
+	origin_text: READABLE_STRING_32
+
+	e_feature: E_FEATURE
 
 feature -- Access
 
@@ -41,14 +43,14 @@ feature -- Access
 			else
 				create l_code_tb
 				create Result.make_caseless (5)
-				if attached l_code_tb.arguments (stone.e_feature) as l_arguments then
+				if attached l_code_tb.arguments (e_feature) as l_arguments then
 					across
 						l_arguments as c
 					loop
 						Result.force ("", c.key)
 					end
 				end
-				if attached l_code_tb.locals (stone.e_feature) as l_locals then
+				if attached l_code_tb.locals (e_feature) as l_locals then
 					across
 						l_locals as c
 					loop
@@ -72,7 +74,7 @@ feature -- Execute
 			create {ARRAYED_LIST [EDITOR_TOKEN]} content_tokens.make (5)
 			create l_scanner.make
 			from
-				l_scanner.execute (stone.origin_text) -- this is not the correct way.
+				l_scanner.execute (origin_text) -- this is not the correct way.
 				l_token := l_scanner.first_token
 			until
 				l_token = Void

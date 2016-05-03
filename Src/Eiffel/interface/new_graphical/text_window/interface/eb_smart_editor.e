@@ -1854,8 +1854,10 @@ feature {NONE} -- Code completable implementation
 			end
 			txt.cursor.go_to_position (l_pos)
 
+			txt.select_region (l_feat_pos, l_pos)
+
 			refresh
-			create l_code_editor.make (a_template.stone)
+			create l_code_editor.make (txt.selected_wide_string, a_template.e_feature)
 			l_code_editor.execute
 		end
 
