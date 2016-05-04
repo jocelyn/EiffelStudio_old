@@ -38,7 +38,7 @@ create {EB_TEMPLATE_FOR_COMPLETION}
 
 feature {NONE} -- Initialization
 
-	make (a_template: CODE_TEMPLATE; a_stone: FEATURE_STONE)
+	make (a_template: CODE_TEMPLATE; a_stone: FEATURE_STONE; a_target: STRING_32)
 			-- Create and initialize a new completion template using `a_template' ...
 		require
 			a_stone_not_void: a_stone /= Void
@@ -49,12 +49,18 @@ feature {NONE} -- Initialization
 			insert_name_internal := a_template.definition.metadata.title
 			associated_template_definition := a_template.definition
 			internal_stone := a_stone.twin
+			target_name := a_target
 		ensure
 			insert_name_internal_set: insert_name_internal = a_template.definition.metadata.title
 			associated_template_definition_set: associated_template_definition = a_template.definition
+			target_set: target_name = a_target
 		end
 
 feature -- Access
+
+	target_name:  STRING_32
+			-- Target name where we want to apply code completion.
+
 
 	is_class: BOOLEAN = False
 			-- Is completion feature a class, of course not.	
@@ -72,7 +78,10 @@ feature -- Access
 			-- template code.
 		local
 			l_renderer: like template_renderer
+			l_text: like local_text
 		do
+				-- Compute local text
+			l_text := local_text
 			l_renderer := template_renderer
 			l_renderer.render_template (template, code_symbol_table)
 				-- Note: it should be safe to use `l_renderer.code' directly without cloning the string.
@@ -90,61 +99,73 @@ feature -- Access
 			l_name: STRING_32
 			n: NATURAL
 		do
-			create l_code_tb
-			l_locals := l_code_tb.locals (e_feature)
-			l_arguments := l_code_tb.arguments (e_feature)
+			if internal_local_text /= Void then
+				Result := internal_local_text
+			else
+				create l_code_tb
+				l_locals := l_code_tb.locals (e_feature)
+				l_arguments := l_code_tb.arguments (e_feature)
 
-			create Result.make_empty
-			across
-				local_definitions as ic
-			loop
-				if l_arguments /= Void and then l_arguments.has (ic.key) then
-					if not l_code_tb.string_type_as_conformance (ic.item, l_locals.item (ic.key), class_c) then
+				create Result.make_empty
+				across
+					local_definitions as ic
+				loop
+					if l_arguments /= Void and then l_arguments.has (ic.key) then
+						if not l_code_tb.string_type_as_conformance (ic.item, l_locals.item (ic.key), class_c) then
+								-- the current argument variable does not conforms to the variable in the template
+								-- for example b: STRING; b: INTEGER
+								-- we generate a new variable name for the template.
+							from
+								l_name := new_name (ic.key.as_string_32)
+								until
+									not l_locals.has (l_name) and then not l_arguments.has (l_name)
+								loop
+									l_name := new_name (ic.key.as_string_32)
+								end
+								if code_symbol_table.has_id (ic.key.as_string_32) then
+									l_value := code_symbol_table.item (ic.key.as_string_32)
+									l_value.set_value (l_name)
+								end
+							internal_code_symbol_table := code_symbol_table
+
+							Result.append_string_general ("%N%T%T%T")
+							Result.append_string_general (ic.key)
+							Result.append (": ")
+							Result.append_string_general (ic.item)
+						end
+					elseif l_locals /= Void and then l_locals.has (ic.key) then
+							-- the current local variable conforms to the variable in the template
+						if not l_code_tb.string_type_as_conformance (ic.item, l_locals.item (ic.key), class_c) then
+							-- the current local variable does not conforms to the variable in the template
+							-- for example b: STRING; b: INTEGER
+							-- we generate a new variable name for the template.
+							from
+								l_name := new_name (ic.key.as_string_32)
+							until
+								not l_locals.has (l_name) and then not l_arguments.has (l_name)
+							loop
+								l_name := new_name (ic.key.as_string_32)
+							end
+							if code_symbol_table.has_id (ic.key.as_string_32) then
+								l_value := code_symbol_table.item (ic.key.as_string_32)
+								l_value.set_value (l_name)
+							end
+							internal_code_symbol_table := code_symbol_table
+
+							Result.append_string_general ("%N%T%T%T")
+							Result.append_string_general (l_name)
+							Result.append (": ")
+							Result.append_string_general (ic.item)
+						end
+					else
 						Result.append_string_general ("%N%T%T%T")
 						Result.append_string_general (ic.key)
 						Result.append (": ")
 						Result.append_string_general (ic.item)
-					else
-						-- the current local variable does not conforms to the variable in the template
-						-- for example b: STRING; b: INTEGER
-						-- we generate a new variable name for the template.
 					end
-				elseif l_locals /= Void and then l_locals.has (ic.key) then
-						-- the current local variable conforms to the variable in the template
-					if not l_code_tb.string_type_as_conformance (ic.item, l_locals.item (ic.key), class_c) then
-						-- the current local variable does not conforms to the variable in the template
-						-- for example b: STRING; b: INTEGER
-						-- we generate a new variable name for the template.
-						from
-							n := 1
-							create l_name.make_from_string_general (ic.key)
-							l_name.append_string_general (n.out)
-						until
-							not l_locals.has (l_name) and then not l_arguments.has (l_name)
-						loop
-							n := n + 1
-							l_name.append_string_general (n.out)
-						end
-						if code_symbol_table.has_id (ic.key.as_string_32) then
-							l_value := code_symbol_table.item (ic.key.as_string_32)
-							l_value.set_value (l_name)
-						end
-						internal_code_symbol_table := code_symbol_table
-
-						Result.append_string_general ("%N%T%T%T")
-						Result.append_string_general (l_name)
-						Result.append (": ")
-						Result.append_string_general (ic.item)
-
-					end
-				else
-					Result.append_string_general ("%N%T%T%T")
-					Result.append_string_general (ic.key)
-					Result.append (": ")
-					Result.append_string_general (ic.item)
 				end
+				internal_local_text := Result
 			end
-			Result.append_character ('%N')
 		end
 
 	local_definitions: STRING_TABLE [STRING]
@@ -217,6 +238,20 @@ feature -- Access
 
 	associated_template_definition: CODE_TEMPLATE_DEFINITION
 			-- Corresponding template definition.
+
+feature -- {NONE} String Utility
+
+	new_name (a_string: STRING_32): STRING_32
+			-- Create a new name
+		local
+			l_r: RANDOM
+			i: INTEGER
+		do
+			create l_r.set_seed (10)
+			i:= l_r.next_random (10) \\ 20
+			create Result.make_from_string (a_string)
+			Result.append (i.out)
+		end
 
 feature -- Feature
 
@@ -323,6 +358,9 @@ feature {NONE} -- Implementation
 	internal_code_symbol_table: detachable like code_symbol_table
 			-- Cached version of `code_symbol_table'
 			-- Note: Do not use directly!
+
+	internal_local_text: like local_text
+			-- Cached local text.		
 
 ;note
 	copyright:	"Copyright (c) 1984-2016, Eiffel Software"

@@ -12,7 +12,7 @@ create
 
 feature {NONE} -- Initialization
 
-	make (a_text: READABLE_STRING_32; a_feature: E_FEATURE)
+	make (a_text: READABLE_STRING_32; a_feature: E_FEATURE;)
 			-- Create an instance with stone `a_stone'.
 		do
 			origin_text := a_text
@@ -27,8 +27,8 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	linked_tokens: STRING_TABLE [LIST [INTEGER]]
-			-- tokens and their positions.	
+	linked_tokens: STRING_TABLE [LIST [EDITOR_TOKEN]]
+			-- wide_image and their tokens.
 
 	content_tokens: LIST [EDITOR_TOKEN]
 			-- Content tokens in code_text
@@ -68,13 +68,13 @@ feature -- Execute
 			l_lines:  LIST [STRING_32]
 			l_scanner: EDITOR_EIFFEL_SCANNER
 			l_token: EDITOR_TOKEN
-			l_list: LIST [INTEGER]
+			l_list: LIST [EDITOR_TOKEN]
 		do
 			create linked_tokens.make (5)
 			create {ARRAYED_LIST [EDITOR_TOKEN]} content_tokens.make (5)
 			create l_scanner.make
 			from
-				l_scanner.execute (origin_text) -- this is not the correct way.
+				l_scanner.execute (origin_text)
 				l_token := l_scanner.first_token
 			until
 				l_token = Void
@@ -83,15 +83,15 @@ feature -- Execute
 					if linked_tokens.has (l_token.wide_image) then
 						l_list := linked_tokens.item (l_token.wide_image)
 						if l_list /= Void then
-							l_list.force (l_token.pos_in_text)
+							l_list.force (l_token)
 						else
-							create {ARRAYED_LIST [INTEGER]} l_list.make (1)
-							l_list.force (l_token.pos_in_text)
+							create {ARRAYED_LIST [EDITOR_TOKEN]} l_list.make (1)
+							l_list.force (l_token)
 							linked_tokens.force (l_list, l_token.wide_image)
 						end
 					else
-						create {ARRAYED_LIST [INTEGER]} l_list.make (1)
-						l_list.force (l_token.pos_in_text)
+						create {ARRAYED_LIST [EDITOR_TOKEN]} l_list.make (1)
+						l_list.force (l_token)
 						linked_tokens.force (l_list, l_token.wide_image)
 					end
 				end

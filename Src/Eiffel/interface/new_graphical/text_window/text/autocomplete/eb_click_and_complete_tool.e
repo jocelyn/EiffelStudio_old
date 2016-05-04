@@ -248,6 +248,8 @@ feature -- Analysis preparation
 		local
 			l_templates: like code_templates
 			l_template:  EB_TEMPLATE_FOR_COMPLETION
+			l_name: STRING
+			l_pos, p: INTEGER
 		do
 			if
 				a_stone /= Void and then
@@ -264,9 +266,16 @@ feature -- Analysis preparation
 						attached {CODE_TEMPLATE} l_templates.item_for_iteration.applicable_item as l_code_template and then
 						attached {CODE_TEMPLATE_DEFINITION} l_code_template.definition as l_template_definition and then
 						attached {CODE_METADATA} l_template_definition.metadata as l_code_metadata and then
-						attached l_code_metadata.title --as l_code_template_title
+						attached l_code_metadata.title and then --as l_code_template_title
+						attached {SMART_TEXT} content as l_content and then
+						attached l_content.cursor.token.previous as prev and then prev.wide_image.same_string_general (".") and then
+						attached prev.previous as prev2
 					then
-						create l_template.make (l_code_template, a_stone)
+						l_pos := l_content.cursor.pos_in_characters
+						p := l_pos - prev2.wide_image.count - 2
+						content.select_region (p, l_pos)
+						l_name := l_content.selected_wide_string
+						create l_template.make (l_code_template, a_stone, l_name)
 						l_template.set_class_i (current_class_i)
 						insert_in_completion_possibilities (l_template)
 						l_templates.forth
