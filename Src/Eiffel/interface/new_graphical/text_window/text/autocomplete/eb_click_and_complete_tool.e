@@ -77,8 +77,8 @@ feature {NONE} -- Access
 			create l_categories.make (2)
 			l_categories.put_last ({CODE_TEMPLATE_ENTITY_NAMES}.code_category)
 				-- TODO move to a constant class.
-				-- {CODE_TEMPLATE_ENTITY_NAMES}.snippet_category?
-			l_categories.put_last ("snippet")
+				-- {CODE_TEMPLATE_ENTITY_NAMES}.template_category?
+			l_categories.put_last ("template")
 			if attached code_template_catalog.service as l_service then
 				Result := l_service.templates_by_category (l_categories, True)
 			else
@@ -262,6 +262,7 @@ feature -- Analysis preparation
 				until
 					l_templates.after
 				loop
+						-- Add template to the completion possibilities list
 					if
 						attached {CODE_TEMPLATE} l_templates.item_for_iteration.applicable_item as l_code_template and then
 						attached {CODE_TEMPLATE_DEFINITION} l_code_template.definition as l_template_definition and then
@@ -272,9 +273,12 @@ feature -- Analysis preparation
 						attached prev.previous as prev2
 					then
 						l_pos := l_content.cursor.pos_in_characters
-						p := l_pos - prev2.wide_image.count - 2
+						p := l_pos - prev2.wide_image.count - 2 + 1
 						content.select_region (p, l_pos)
 						l_name := l_content.selected_wide_string
+							-- remove the "." and adjust
+						l_name.remove (l_name.count)
+						l_name.adjust
 						create l_template.make (l_code_template, a_stone, l_name)
 						l_template.set_class_i (current_class_i)
 						insert_in_completion_possibilities (l_template)

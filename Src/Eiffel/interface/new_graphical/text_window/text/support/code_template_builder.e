@@ -80,6 +80,26 @@ feature -- Access
 
 feature -- Conformance
 
+	string_type_string_conformance (a_string: STRING_32; a_string2: STRING_32; a_class_c: CLASS_C): BOOLEAN
+			-- Is the type represented by `a_string' conforms_to type `a_string_2'
+		do
+			if not a_string.is_empty then
+				type_parser.parse_from_string_32 ({STRING_32} "type " + a_string, Void)
+				if attached type_parser.type_node as l_class_type_as then
+					type_parser.parse_from_string_32 ({STRING_32} "type " + a_string2, Void)
+					if attached type_parser.type_node as l_class_type_as_2 then
+						if
+							attached type_a_generator.evaluate_type (l_class_type_as, a_class_c) as l_type_a and then
+							attached type_a_generator.evaluate_type (l_class_type_as_2, a_class_c) as l_type_a_2
+						then
+							Result := l_type_a.conform_to (a_class_c, l_type_a_2)
+						end
+					end
+				end
+			end
+		end
+
+
 	string_type_as_conformance (a_string: STRING_32; a_type_as: TYPE_AS; a_class_c: CLASS_C): BOOLEAN
 			-- Is the type represented by `a_string' conforms_to type `a_type_as'
 		do

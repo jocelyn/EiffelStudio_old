@@ -4,11 +4,11 @@
 		<title>Maximum of array</title>
 		<description>Get the maximum of array</description>
 		<author>Eiffel Software</author>
-		<shortcut>snippets</shortcut>
+		<shortcut>templates</shortcut>
 		<categories>
 			<category>Eiffel</category>
 			<category>code</category>
-			<category>snippet</category>
+			<category>template</category>
 		</categories>
 	</metadata>
 	<declarations>

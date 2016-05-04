@@ -61,7 +61,6 @@ feature -- Access
 	target_name:  STRING_32
 			-- Target name where we want to apply code completion.
 
-
 	is_class: BOOLEAN = False
 			-- Is completion feature a class, of course not.	
 
@@ -117,15 +116,15 @@ feature -- Access
 								-- we generate a new variable name for the template.
 							from
 								l_name := new_name (ic.key.as_string_32)
-								until
-									not l_locals.has (l_name) and then not l_arguments.has (l_name)
-								loop
-									l_name := new_name (ic.key.as_string_32)
-								end
-								if code_symbol_table.has_id (ic.key.as_string_32) then
-									l_value := code_symbol_table.item (ic.key.as_string_32)
-									l_value.set_value (l_name)
-								end
+							until
+								not l_locals.has (l_name) and then not l_arguments.has (l_name)
+							loop
+								l_name := new_name (ic.key.as_string_32)
+							end
+							if code_symbol_table.has_id (ic.key.as_string_32) then
+								l_value := code_symbol_table.item (ic.key.as_string_32)
+								l_value.set_value (l_name)
+							end
 							internal_code_symbol_table := code_symbol_table
 
 							Result.append_string_general ("%N%T%T%T")
@@ -234,7 +233,6 @@ feature -- Access
 			Result.set_pixmap (icon)
 			Result.set_text (insert_name)
 		end
-
 
 	associated_template_definition: CODE_TEMPLATE_DEFINITION
 			-- Corresponding template definition.
