@@ -31,7 +31,7 @@ feature -- Access
 			-- wide_image and their tokens.
 
 	content_tokens: LIST [EDITOR_TOKEN]
-			-- Content tokens in code_text
+			-- Content tokens in code_text.
 
 	linking_definitions: STRING_TABLE [STRING]
 			-- Linking definitions arguments and locals names.

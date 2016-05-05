@@ -97,10 +97,20 @@ feature -- Access
 			l_value: CODE_SYMBOL_VALUE
 			l_name: STRING_32
 			n: NATURAL
+			l_context_name: READABLE_STRING_GENERAL
 		do
 			if internal_local_text /= Void then
 				Result := internal_local_text
 			else
+				l_context_name := context_variable_name
+
+					-- Replace context name with target name and update code symbol table.
+				if code_symbol_table.has_id (l_context_name.as_string_32) then
+					l_value := code_symbol_table.item (l_context_name.as_string_32)
+					l_value.set_value (target_name)
+				end
+				internal_code_symbol_table := code_symbol_table
+
 				create l_code_tb
 				l_locals := l_code_tb.locals (e_feature)
 				l_arguments := l_code_tb.arguments (e_feature)
@@ -110,7 +120,8 @@ feature -- Access
 					local_definitions as ic
 				loop
 					if l_arguments /= Void and then l_arguments.has (ic.key) then
-						if not l_code_tb.string_type_as_conformance (ic.item, l_locals.item (ic.key), class_c) then
+						if not l_code_tb.string_type_as_conformance (ic.item, l_locals.item (ic.key), class_c) and then not l_context_name.same_string (ic.key) then
+
 								-- the current argument variable does not conforms to the variable in the template
 								-- for example b: STRING; b: INTEGER
 								-- we generate a new variable name for the template.
@@ -132,7 +143,7 @@ feature -- Access
 							Result.append (": ")
 							Result.append_string_general (ic.item)
 						end
-					elseif l_locals /= Void and then l_locals.has (ic.key) then
+					elseif l_locals /= Void and then l_locals.has (ic.key) and then not l_context_name.same_string (ic.key) then
 							-- the current local variable conforms to the variable in the template
 						if not l_code_tb.string_type_as_conformance (ic.item, l_locals.item (ic.key), class_c) then
 							-- the current local variable does not conforms to the variable in the template
@@ -156,7 +167,7 @@ feature -- Access
 							Result.append (": ")
 							Result.append_string_general (ic.item)
 						end
-					else
+					elseif not l_context_name.same_string (ic.key) then
 						Result.append_string_general ("%N%T%T%T")
 						Result.append_string_general (ic.key)
 						Result.append (": ")
@@ -246,7 +257,7 @@ feature -- {NONE} String Utility
 			i: INTEGER
 		do
 			create l_r.set_seed (10)
-			i:= l_r.next_random (10) \\ 20
+			i:= l_r.next_random (1) \\ 20
 			create Result.make_from_string (a_string)
 			Result.append (i.out)
 		end
@@ -304,6 +315,24 @@ feature {NONE} -- Implementation: STONE
 	internal_stone: FEATURE_STONE
 
 feature {NONE} -- Implementation
+
+	context_variable_name: READABLE_STRING_GENERAL
+		local
+			l_context: STRING_32
+			l_cb: CODE_TEMPLATE_BUILDER
+		do
+			create l_cb
+			l_context := associated_template_definition.context.context
+			across
+				local_definitions as c
+			until
+				Result /= Void
+			loop
+				if l_cb.string_type_string_conformance (c.item, l_context, class_c) then
+					Result := c.key
+				end
+			end
+		end
 
 	insert_name_internal: STRING_32
 

@@ -1805,6 +1805,7 @@ feature {NONE} -- Code completable implementation
 			end
 
 				-- Insert template body
+			txt.insert_string ("%T%T%T") -- identation for the first line.
 			txt.insert_string (l_template)
 			l_pos := l_pos + l_template.count
 			if {PLATFORM}.is_windows then

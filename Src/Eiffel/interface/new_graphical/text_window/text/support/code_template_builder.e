@@ -99,7 +99,6 @@ feature -- Conformance
 			end
 		end
 
-
 	string_type_as_conformance (a_string: STRING_32; a_type_as: TYPE_AS; a_class_c: CLASS_C): BOOLEAN
 			-- Is the type represented by `a_string' conforms_to type `a_type_as'
 		do
@@ -116,7 +115,6 @@ feature -- Conformance
 				end
 			end
 		end
-
 
 	string_type_a_conformance (a_string: STRING_32; a_type_a: TYPE_A; a_class_c: CLASS_C): BOOLEAN
 			-- Is the type represented by `a_string' conforms_to type `a_type_a'
