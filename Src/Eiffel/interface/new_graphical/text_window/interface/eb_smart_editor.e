@@ -1772,6 +1772,7 @@ feature {NONE} -- Code completable implementation
 			text_displayed.complete_feature_call (completed, is_feature_signature, appended_character, remainder, not a_continue_completion)
 		end
 
+
 	complete_template_call (a_template: EB_TEMPLATE_FOR_COMPLETION)
 		local
 			l_template: STRING_32
@@ -1786,7 +1787,7 @@ feature {NONE} -- Code completable implementation
 
 				-- Body
 			l_pos := txt.cursor.pos_in_characters
-			l_template := a_template.code_text
+			l_template := a_template.code_texts.code
 
 				-- TODO: remove previous token!
 			if
@@ -1817,7 +1818,7 @@ feature {NONE} -- Code completable implementation
 					-- FIXME: check for inline agent !
 				txt.find_feature_named (f.name_32)
 				if txt.found_feature then
-					l_locals := a_template.local_text
+					l_locals := a_template.code_texts.locals
 					l_feat_pos := txt.cursor.pos_in_characters
 
 					txt.search_string_from_cursor ("local")

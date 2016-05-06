@@ -10,7 +10,8 @@ class
 inherit
 	EB_NAME_FOR_COMPLETION
 		rename
-			make as make_old
+			make as make_old,
+			code as code_completion
 		redefine
 			icon,
 			tooltip_text,
@@ -26,6 +27,11 @@ inherit
 		end
 
 	EB_SHARED_EDITOR_TOKEN_UTILITY
+		undefine
+			out, copy, is_equal
+		end
+
+	EB_SHARED_PIXMAPS
 		undefine
 			out, copy, is_equal
 		end
@@ -73,14 +79,110 @@ feature -- Access
 	template: CODE_TEMPLATE
 			-- Full template to insert in editor
 
-	code_text: STRING_32
+
+	code_texts: TUPLE [locals: STRING_32; code: STRING_32]
+			-- Local and code from template.
+		local
+			l_locals: STRING_32
+			l_code: STRING_32
+		once
+			l_locals := locals
+			l_code := code
+			Result := [l_locals, l_code]
+		end
+
+	local_definitions: STRING_TABLE [STRING]
+			-- Local variables definitions for the given template.
+		local
+			l_declarations: like local_declarations
+			l_cursor:  DS_BILINEAR_CURSOR [CODE_DECLARATION]
+		do
+			create Result.make (2)
+			l_declarations := local_declarations
+			l_cursor := l_declarations.new_cursor
+			if not l_declarations.is_empty then
+				from l_cursor.start until l_cursor.after loop
+					if
+						not l_cursor.item.is_built_in and then
+						attached {CODE_LITERAL_DECLARATION} l_cursor.item as l_literal and then
+						attached {CODE_OBJECT_DECLARATION} l_literal as l_object
+					then
+						Result.force (l_object.must_conform_to, l_object.id)
+					end
+					l_cursor.forth
+				end
+			end
+		end
+
+	local_declarations: DS_BILINEAR [CODE_DECLARATION]
+			-- Declarations for a given code template.
+		do
+			Result := associated_template_definition.declarations.items
+		end
+
+	icon: EV_PIXMAP
+			-- Associated icon based on data
+		do
+			Result := icon_pixmaps.information_affected_resource_icon
+		end
+
+	tooltip_text: STRING_32
+			-- Text for tooltip of Current.  The tooltip shall display information which is not included in the
+			-- actual output of Current.
+		local
+			l_text: STRING_32
+		do
+			create Result.make_empty
+			if attached associated_template_definition.applicable_item then
+				l_text := associated_template_definition.metadata.description
+				Result.append (l_text)
+			end
+			if Result.is_empty then
+				Result := string
+			end
+		end
+
+	grid_item : EB_GRID_EDITOR_TOKEN_ITEM
+			-- Corresponding grid item
+		do
+			create Result
+			Result.set_overriden_fonts (label_font_table, label_font_height)
+			Result.set_pixmap (icon)
+			Result.set_text (insert_name)
+		end
+
+	associated_template_definition: CODE_TEMPLATE_DEFINITION
+			-- Corresponding template definition.
+
+feature {NONE} -- String Utility
+
+	new_name (a_string: STRING_32): STRING_32
+			-- Create a new name
+		local
+			l_r: RANDOM
+			i: INTEGER
+			l_time: TIME
+			l_seed: INTEGER
+		do
+			create l_time.make_now
+		    l_seed := l_time.hour
+		    l_seed := l_seed * 60 + l_time.minute
+		    l_seed := l_seed * 60 + l_time.second
+		    l_seed := l_seed * 1000 + l_time.milli_second
+		  	create l_r.set_seed (l_seed)
+
+		   	i:= l_r.item \\ 20
+			create Result.make_from_string (a_string)
+			Result.append (i.out)
+		end
+
+feature {NONE} -- Template implementation.
+
+	code: STRING_32
 			-- template code.
 		local
 			l_renderer: like template_renderer
-			l_text: like local_text
 		do
-				-- Compute local text
-			l_text := local_text
 			l_renderer := template_renderer
 			l_renderer.render_template (template, code_symbol_table)
 				-- Note: it should be safe to use `l_renderer.code' directly without cloning the string.
@@ -88,7 +190,7 @@ feature -- Access
 			Result.append_character ('%N')
 		end
 
-	local_text: STRING_32
+	locals: STRING_32
 			-- Local text.
 		local
 			l_locals:  STRING_TABLE [TYPE_AS]
@@ -99,9 +201,6 @@ feature -- Access
 			n: NATURAL
 			l_context_name: READABLE_STRING_GENERAL
 		do
-			if internal_local_text /= Void then
-				Result := internal_local_text
-			else
 				l_context_name := context_variable_name
 
 					-- Replace context name with target name and update code symbol table.
@@ -174,92 +273,6 @@ feature -- Access
 						Result.append_string_general (ic.item)
 					end
 				end
-				internal_local_text := Result
-			end
-		end
-
-	local_definitions: STRING_TABLE [STRING]
-			-- Local variables definitions for the given template.
-		local
-			l_declarations: like local_declarations
-			l_cursor:  DS_BILINEAR_CURSOR [CODE_DECLARATION]
-		do
-			create Result.make (2)
-			l_declarations := local_declarations
-			l_cursor := l_declarations.new_cursor
-			if not l_declarations.is_empty then
-				from l_cursor.start until l_cursor.after loop
-					if
-						not l_cursor.item.is_built_in and then
-						attached {CODE_LITERAL_DECLARATION} l_cursor.item as l_literal and then
-						attached {CODE_OBJECT_DECLARATION} l_literal as l_object
-					then
-						Result.force (l_object.must_conform_to, l_object.id)
-					end
-					l_cursor.forth
-				end
-			end
-		end
-
-	local_declarations: DS_BILINEAR [CODE_DECLARATION]
-			-- Declarations for a given code template.
-		do
-			Result := associated_template_definition.declarations.items
-		end
-
-	icon: EV_PIXMAP
-			-- Associated icon based on data
-		do
-			Result := configuration_pixmaps.view_flat_icon
-		end
-
-	configuration_pixmaps: attached ES_CONFIGURATION_PIXMAPS
-			-- Configuration system pixmaps (16px)
-		once
-			create Result.make ("16x16")
-		end
-
-	tooltip_text: STRING_32
-			-- Text for tooltip of Current.  The tooltip shall display information which is not included in the
-			-- actual output of Current.
-		local
-			l_text: STRING_32
-		do
-			create Result.make_empty
-			if attached associated_template_definition.applicable_item then
-				l_text := associated_template_definition.metadata.description
-				Result.append (l_text)
-			end
-
-			if Result.is_empty then
-				Result := string
-			end
-		end
-
-	grid_item : EB_GRID_EDITOR_TOKEN_ITEM
-			-- Corresponding grid item
-		do
-			create Result
-			Result.set_overriden_fonts (label_font_table, label_font_height)
-			Result.set_pixmap (icon)
-			Result.set_text (insert_name)
-		end
-
-	associated_template_definition: CODE_TEMPLATE_DEFINITION
-			-- Corresponding template definition.
-
-feature -- {NONE} String Utility
-
-	new_name (a_string: STRING_32): STRING_32
-			-- Create a new name
-		local
-			l_r: RANDOM
-			i: INTEGER
-		do
-			create l_r.set_seed (10)
-			i:= l_r.next_random (1) \\ 20
-			create Result.make_from_string (a_string)
-			Result.append (i.out)
 		end
 
 feature -- Feature
@@ -385,9 +398,6 @@ feature {NONE} -- Implementation
 	internal_code_symbol_table: detachable like code_symbol_table
 			-- Cached version of `code_symbol_table'
 			-- Note: Do not use directly!
-
-	internal_local_text: like local_text
-			-- Cached local text.		
 
 ;note
 	copyright:	"Copyright (c) 1984-2016, Eiffel Software"
