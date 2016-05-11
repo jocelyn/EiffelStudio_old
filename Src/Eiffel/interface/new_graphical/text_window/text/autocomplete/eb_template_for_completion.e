@@ -62,6 +62,9 @@ feature {NONE} -- Initialization
 			target_set: target_name = a_target
 		end
 
+feature -- Test
+
+
 feature -- Access
 
 	target_name:  STRING_32
@@ -85,6 +88,7 @@ feature -- Access
 		local
 			l_locals: STRING_32
 			l_code: STRING_32
+			l_code_tb: CODE_TEMPLATE_BUILDER
 		once
 			l_locals := locals
 			l_code := code
@@ -190,11 +194,26 @@ feature {NONE} -- Template implementation.
 			Result.append_character ('%N')
 		end
 
+	local_text: STRING_32
+		do
+			create Result.make_empty
+			across
+					local_definitions as ic
+
+			loop
+				Result.append_string_general ("%N%T%T%T")
+				Result.append_string_general (ic.key)
+				Result.append (": ")
+				Result.append_string_general (ic.item)
+			end
+		end
+
 	locals: STRING_32
 			-- Local text.
 		local
 			l_locals:  STRING_TABLE [TYPE_AS]
 			l_arguments: STRING_TABLE [TYPE_A]
+			l_read_only_locals: STRING_TABLE [STRING]
 			l_code_tb: CODE_TEMPLATE_BUILDER
 			l_value: CODE_SYMBOL_VALUE
 			l_name: STRING_32
@@ -213,13 +232,17 @@ feature {NONE} -- Template implementation.
 				create l_code_tb
 				l_locals := l_code_tb.locals (e_feature)
 				l_arguments := l_code_tb.arguments (e_feature)
+				l_read_only_locals := l_code_tb.read_only_locals (e_feature)
 
 				create Result.make_empty
 				across
 					local_definitions as ic
 				loop
 					if l_arguments /= Void and then l_arguments.has (ic.key) then
-						if not l_code_tb.string_type_as_conformance (ic.item, l_locals.item (ic.key), class_c) and then not l_context_name.same_string (ic.key) then
+						if
+							not l_code_tb.string_type_as_conformance (ic.item, l_locals.item (ic.key), class_c) and then
+							not l_context_name.is_case_insensitive_equal (ic.key)
+						then
 
 								-- the current argument variable does not conforms to the variable in the template
 								-- for example b: STRING; b: INTEGER
@@ -227,7 +250,9 @@ feature {NONE} -- Template implementation.
 							from
 								l_name := new_name (ic.key.as_string_32)
 							until
-								not l_locals.has (l_name) and then not l_arguments.has (l_name)
+								not l_locals.has (l_name) and then
+								not l_arguments.has (l_name) and then
+								not l_read_only_locals.has (l_name)
 							loop
 								l_name := new_name (ic.key.as_string_32)
 							end
@@ -242,7 +267,7 @@ feature {NONE} -- Template implementation.
 							Result.append (": ")
 							Result.append_string_general (ic.item)
 						end
-					elseif l_locals /= Void and then l_locals.has (ic.key) and then not l_context_name.same_string (ic.key) then
+					elseif l_locals /= Void and then l_locals.has (ic.key) and then not l_context_name.is_case_insensitive_equal (ic.key) then
 							-- the current local variable conforms to the variable in the template
 						if not l_code_tb.string_type_as_conformance (ic.item, l_locals.item (ic.key), class_c) then
 							-- the current local variable does not conforms to the variable in the template
@@ -251,7 +276,9 @@ feature {NONE} -- Template implementation.
 							from
 								l_name := new_name (ic.key.as_string_32)
 							until
-								not l_locals.has (l_name) and then not l_arguments.has (l_name)
+								not l_locals.has (l_name) and then
+								not l_arguments.has (l_name) and then
+								not l_read_only_locals.has (l_name)
 							loop
 								l_name := new_name (ic.key.as_string_32)
 							end
@@ -266,6 +293,29 @@ feature {NONE} -- Template implementation.
 							Result.append (": ")
 							Result.append_string_general (ic.item)
 						end
+					elseif l_read_only_locals /= Void and then l_read_only_locals.has (ic.key) and then not l_context_name.is_case_insensitive_equal (ic.key) then 
+							-- The current local variable from the template has the same name as a read only variable
+							-- We need to generate a new variable for the template.
+						from
+							l_name := new_name (ic.key.as_string_32)
+						until
+							not l_locals.has (l_name) and then
+							not l_arguments.has (l_name) and then
+							not l_read_only_locals.has (l_name)
+						loop
+							l_name := new_name (ic.key.as_string_32)
+						end
+						if code_symbol_table.has_id (ic.key.as_string_32) then
+							l_value := code_symbol_table.item (ic.key.as_string_32)
+							l_value.set_value (l_name)
+						end
+						internal_code_symbol_table := code_symbol_table
+
+						Result.append_string_general ("%N%T%T%T")
+						Result.append_string_general (l_name)
+						Result.append (": ")
+						Result.append_string_general (ic.item)
+
 					elseif not l_context_name.same_string (ic.key) then
 						Result.append_string_general ("%N%T%T%T")
 						Result.append_string_general (ic.key)
@@ -398,6 +448,30 @@ feature {NONE} -- Implementation
 	internal_code_symbol_table: detachable like code_symbol_table
 			-- Cached version of `code_symbol_table'
 			-- Note: Do not use directly!
+
+
+	feature_template_code (a_template: STRING_32; a_locals: STRING_32): STRING_32
+			-- Wrap template `a_template' into a feature.
+		do
+			create Result.make_from_string ("f_567")
+			Result.append_string ("%Nlocal")
+			Result.append_string ("%N" + a_locals)
+			Result.append_string ("%Ndo")
+			Result.append_string ("%N" + a_template)
+			Result.append_string ("%Nend")
+			Result.adjust
+		end
+
+
+	feature_template: STRING = "[
+			f_567
+				local
+					$locals
+				do
+					$template
+				end
+	]"
+
 
 ;note
 	copyright:	"Copyright (c) 1984-2016, Eiffel Software"

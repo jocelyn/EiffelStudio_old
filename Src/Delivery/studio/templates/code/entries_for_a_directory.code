@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<code_template format="1.0.0">
+	<metadata>
+		<title>Entries for a directory</title>
+		<description>Show entires for the current directory</description>
+		<author>Eiffel Software</author>
+		<shortcut>templates</shortcut>
+		<categories>
+			<category>Eiffel</category>
+			<category>code</category>
+			<category>template</category>
+		</categories>
+	</metadata>
+	<declarations>
+		<object id="path" editable="True" conforms_to="PATH">
+		</object>
+		<object id="dir" editable="True" conforms_to="DIRECTORY">
+		</object>
+	</declarations>
+	<context> 
+			<conforms_to>DIRECTORY</conforms_to>
+	</context> 
+	<templates>
+		<template>
+			create ${path}.make_current
+			create ${dir}.make_with_path (${path})
+
+			across
+				${dir}.entries as ic
+			loop
+				print (ic.item.name)
+				io.put_new_line
+			end
+		</template> 
+	</templates>
+</code_template>
