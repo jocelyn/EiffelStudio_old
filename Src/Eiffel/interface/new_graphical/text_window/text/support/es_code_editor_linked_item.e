@@ -1,36 +1,81 @@
 note
-	description: "Get editor tokens and linking tokens from a given feature"
+	description: "Summary description for {ES_CODE_EDITOR_LINKED_ITEM}."
+	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 
-deferred class
-	ES_CODE_EDITOR_LINKING
+class
+	ES_CODE_EDITOR_LINKED_ITEM
+
+inherit
+	DEBUG_OUTPUT
+
+create
+	make
+
+feature {NONE} -- Initialization
+
+	make (a_line: EDITOR_LINE; a_token: EDITOR_TOKEN; a_start_pos, a_end_pos: INTEGER)
+		do
+			line := a_line
+			token := a_token
+			start_pos := a_start_pos
+			end_pos := a_end_pos
+		end
 
 feature -- Access
 
-	is_active: BOOLEAN
-			-- Is linked editing?
-		deferred
-		end
+	line: EDITOR_LINE assign set_line
 
-feature -- Execution
+	token: EDITOR_TOKEN assign set_token
 
-	begin
+	start_pos: INTEGER assign set_start_pos
+
+	end_pos: INTEGER assign set_end_pos
+
+feature -- Element change
+
+	set_line (a_line: EDITOR_LINE)
 		do
+			line := a_line
 		end
 
-	finish
+	set_token (a_token: EDITOR_TOKEN)
 		do
+			token := a_token
 		end
 
-	execute (op: detachable READABLE_STRING_8)
+	set_start_pos (a_pos: INTEGER)
 		do
+			start_pos := a_pos
 		end
 
+	set_end_pos (a_pos: INTEGER)
+		do
+			end_pos := a_pos
+		end
 
-invariant
+feature -- Status report
 
-note
+	debug_output: STRING_32
+			-- String that should be displayed in debugger to represent `Current'.
+		do
+			create Result.make (10)
+			Result.append_character ('@')
+			if line.is_valid then
+				Result.append_integer (line.index)
+			else
+				Result.append_character ('_')
+			end
+			Result.append_character (' ')
+			Result.append_character ('[')
+			Result.append_integer (start_pos)
+			Result.append_character ('-')
+			Result.append_integer (end_pos)
+			Result.append_character (']')
+		end
+
+;note
 	copyright: "Copyright (c) 1984-2016, Eiffel Software"
 	license: "GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options: "http://www.eiffel.com/licensing"

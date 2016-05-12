@@ -19,6 +19,8 @@ inherit
 		export
 			{EB_SMART_EDITOR} on_text_edited
 		redefine
+			insert_char,
+			delete_char, back_delete_char,
 			restore_tokens_properties,
 			restore_tokens_properties_one_line,
 			reset_text,
@@ -66,6 +68,30 @@ feature -- Access
 
 	click_tool: EB_CLICK_AND_COMPLETE_TOOL
 			-- Tool that finds types and stones from text tokens.
+
+feature -- Edit linking mode
+
+	enable_linked_editing (a_editor: EB_EDITOR)
+		local
+			l_linking: ES_CODE_EDITOR_TEXT_LINKING
+		do
+			if attached linked_editing as e then
+				disable_linked_editing
+			end
+			create l_linking.make (Current, a_editor)
+			linked_editing := l_linking
+		end
+
+	disable_linked_editing
+		do
+			if attached linked_editing as e then
+				e.finish
+				linked_editing := Void
+			end
+		end
+
+	linked_editing: detachable ES_CODE_EDITOR_LINKING
+			-- Active linked tokens editing, if enabled.
 
 feature -- Element Change
 
@@ -328,6 +354,7 @@ feature -- Search
 			Precursor {CLICKABLE_TEXT}
 			disable_click_tool
 			click_tool.reset
+			disable_linked_editing
 		end
 
 feature -- History operation
@@ -719,6 +746,58 @@ feature -- Syntax completion
 			end
 		end
 
+	insert_char (c: CHARACTER_32)
+			-- Precursor.
+		do
+			if
+				attached linked_editing as lnk and then
+				lnk.is_active
+			then
+				inspect c
+				when 'a'..'z', 'A'..'Z', '0'..'9', '_' then
+					Precursor (c)
+					lnk.execute (insert_char_id)
+				else
+					disable_linked_editing
+					Precursor (c)
+				end
+			else
+				Precursor (c)
+			end
+		end
+
+	delete_char
+			-- <Precursor>.
+		do
+			if
+				attached linked_editing as lnk and then
+				lnk.is_active
+			then
+				Precursor
+				lnk.execute (delete_char_id)
+			else
+				Precursor
+			end
+		end
+
+	back_delete_char
+			-- <Precursor>.
+		do
+			if
+				attached linked_editing as lnk and then
+				lnk.is_active
+			then
+				Precursor
+				lnk.execute (back_delete_char_id)
+			else
+				Precursor
+			end
+		end
+
+	insert_char_id: STRING = "InsChar"
+	delete_char_id: STRING = "DelChar"
+	back_delete_char_id: STRING = "BackDelChar"
+
 feature {NONE} -- Possiblilities provider
 
 	insertion: STRING_32
@@ -782,7 +861,7 @@ feature {NONE}-- click information update
 
 	restore_tokens_properties (begin_line, end_line: like line)
 			-- Restore some token properties (position, beginning of a feature)
-			-- using lists crated by `record...modified_line' procedures.
+			-- using lists created by `record...modified_line' procedures.
 		local
 			tok: EDITOR_TOKEN
 			tfs: EDITOR_TOKEN_FEATURE_START
@@ -889,7 +968,7 @@ feature {NONE} -- Implementation
 		end
 
 note
-	copyright:	"Copyright (c) 1984-2014, Eiffel Software"
+	copyright:	"Copyright (c) 1984-2016, Eiffel Software"
 	license:	"GPL version 2 (see http://www.eiffel.com/licensing/gpl.txt)"
 	licensing_options:	"http://www.eiffel.com/licensing"
 	copying: "[

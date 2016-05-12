@@ -39,7 +39,8 @@ inherit
 			on_text_saved,
 			on_text_fully_loaded,
 			make,
-			create_token_handler
+			create_token_handler,
+			select_current_token
 		end
 
 	EB_TAB_CODE_COMPLETABLE
@@ -620,6 +621,30 @@ feature {NONE} -- Process Vision2 Events
 				-- we don't change the value. Else, its new value is set to False unless
 				-- only ctrl key was pressed
 			auto_point := auto_point xor switch_auto_point
+		end
+
+feature {NONE} -- Handle mouse clicks
+
+	select_current_token (is_for_word: BOOLEAN)
+		local
+			txt: like text_displayed
+		do
+			txt := text_displayed
+			empty_word_selection := False
+			if
+				ev_application.ctrl_pressed and then
+				attached txt.cursor as l_cursor and then
+				attached l_cursor.token as tok and then
+				tok.is_text and then is_word (tok.wide_image)
+			then
+				txt.enable_linked_editing (Current)
+			else
+				txt.disable_linked_editing
+			end
+			Precursor (is_for_word)
+			if attached txt.linked_editing as e then
+				e.begin
+			end
 		end
 
 feature {NONE} -- Handle keystrokes
@@ -1855,12 +1880,11 @@ feature {NONE} -- Code completable implementation
 				end
 			end
 			txt.cursor.go_to_position (l_pos)
-
 			txt.select_region (l_feat_pos, l_pos)
 
 			refresh
-			create l_code_editor.make (txt.selected_wide_string, a_template.e_feature)
-			l_code_editor.execute
+			create {ES_CODE_EDITOR_FEATURE_LINKING} l_code_editor.make (txt.selected_wide_string, a_template.e_feature)
+			l_code_editor.execute (Void)
 		end
 
 	select_from_cursor_to_saved
