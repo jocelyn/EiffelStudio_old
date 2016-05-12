@@ -88,7 +88,7 @@ feature -- Access
 		local
 			l_locals: STRING_32
 			l_code: STRING_32
-		once
+		do
 			l_locals := locals
 			l_code := code
 			Result := [l_locals, l_code]

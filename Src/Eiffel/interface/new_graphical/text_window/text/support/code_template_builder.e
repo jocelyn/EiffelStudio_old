@@ -16,7 +16,8 @@ inherit
 	AST_ITERATOR
 		redefine
 			process_object_test_as,
-			process_loop_as
+			process_loop_as,
+			process_named_expression_as
 		end
 
 feature -- Reset
@@ -35,7 +36,7 @@ feature -- Reset
 
 feature -- Access
 
-	arguments (e_feature: E_FEATURE): detachable STRING_TABLE [TYPE_A]
+	arguments (e_feature: E_FEATURE): STRING_TABLE [TYPE_A]
 			-- Given a feature `e_feature' return
 			-- a Table of pair, variable name (key)
 			-- variable Type if it has arguments.
@@ -43,8 +44,8 @@ feature -- Access
 			l_arguments: E_FEATURE_ARGUMENTS
 			i: INTEGER
 		do
+			create Result.make_caseless (2)
 			if e_feature.argument_count > 0 then
-				create Result.make_caseless (2)
 				from
 					i := 1
 					l_arguments := e_feature.arguments
@@ -57,7 +58,7 @@ feature -- Access
 			end
 		end
 
-	locals (e_feature: E_FEATURE): detachable STRING_TABLE [TYPE_AS]
+	locals (e_feature: E_FEATURE): STRING_TABLE [TYPE_AS]
 			-- Given a feature `e_feature' return
 			-- a Table of pair, variable name (key)
 			-- variable Type if it has locals.
@@ -70,8 +71,8 @@ feature -- Access
 			l_id_list: IDENTIFIER_LIST
 			l_count : INTEGER
 		do
+			create Result.make_caseless (5)
 			if e_feature.locals_count > 0 then
-				create Result.make_caseless (5)
 				from
 					l_locals := e_feature.locals
 					l_count := l_locals.count
@@ -153,6 +154,14 @@ feature -- AST Iterator
 				set_object_test_local (l_id.name_32)
 			end
 			Precursor (l_as)
+		end
+
+	process_named_expression_as (a_as: NAMED_EXPRESSION_AS)
+		do
+			if attached a_as.name as l_name then
+				set_object_test_local (l_name.name_32)
+			end
+			Precursor(a_as)
 		end
 
 feature -- Conformance
