@@ -193,7 +193,7 @@ feature -- Execute
 				end
 			end
 		end
-		
+
 	update_pos_in_text (tok: EDITOR_TOKEN)
 			-- Try updating `tok.pos_in_text` if missing.
 		local
@@ -213,16 +213,17 @@ feature -- Execute
 			pos: INTEGER
 		do
 			if attached linked_tokens as lst then
+--				editor.flush
 				txt := text
 				pos := txt.cursor.pos_in_text
 				across
 					lst as ic
 				loop
-					if attached ic.item.line as l_line and then l_line.is_valid then
-						txt.go_i_th (l_line.index)
-						editor.redraw_current_line
-					elseif ic.item.end_pos > 0 then
+					if ic.item.end_pos > 0 then
 						txt.cursor.go_to_position (ic.item.end_pos)
+						editor.redraw_current_line
+					elseif attached ic.item.line as l_line and then l_line.is_valid then
+						txt.go_i_th (l_line.index)
 						editor.redraw_current_line
 					else
 						editor.redraw_current_screen
