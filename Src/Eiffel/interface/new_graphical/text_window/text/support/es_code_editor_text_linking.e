@@ -46,6 +46,11 @@ feature -- Access
 
 feature -- Execute
 
+	dbg_print (m: READABLE_STRING_8)
+		do
+			print (m)
+		end
+
 	begin
 		local
 			tok: EDITOR_TOKEN
@@ -57,7 +62,7 @@ feature -- Execute
 				attached linked_tokens as lst and
 				attached editing_token as l_editing_token
 			then
-				print ("Begin linked editing [nb tokens:" + lst.count.out +", token=%"" + l_editing_token.token.wide_image + "%"].%N")
+				dbg_print ("Begin linked editing [nb tokens:" + lst.count.out +", token=%"" + l_editing_token.token.wide_image + "%"].%N")
 
 				create bgcol.make_with_8_bit_rgb (210, 255, 210)
 
@@ -67,7 +72,7 @@ feature -- Execute
 					lst as ic
 				loop
 					tok := ic.item.token
-					print (" - " + ic.item.debug_output + " -> %"" + tok.wide_image + "%"%N")
+					dbg_print (" - " + ic.item.debug_output + " -> %"" + tok.wide_image + "%"%N")
 					tok.set_background_color (bgcol)
 				end
 				refresh_related_lines
@@ -85,7 +90,7 @@ feature -- Execute
 			pos: INTEGER
 		do
 			if attached linked_tokens as lst and then attached text as txt then
-				print ("Finish linked editing [nb tokens:" + lst.count.out + "].%N")
+				dbg_print ("Finish linked editing [nb tokens:" + lst.count.out + "].%N")
 				if attached txt.cursor as curs then
 					pos := curs.pos_in_text
 					create bgcol.make_with_8_bit_rgb (0,0,0)
@@ -93,7 +98,7 @@ feature -- Execute
 						lst as ic
 					loop
 						tok := ic.item.token
-						print (" - " + ic.item.debug_output + " -> %"" + tok.wide_image + "%"%N")
+						dbg_print (" - " + ic.item.debug_output + " -> %"" + tok.wide_image + "%"%N")
 						tok.set_background_color (Void)
 					end
 					refresh_related_lines
@@ -154,26 +159,26 @@ feature -- Execute
 	--				off := 1
 	--				txt.cursor.go_to_position (pos)
 
-					print ("Execute linked editing [pos=" + pos.out + "].%N")
-					print (" editing token " + l_editing_token.debug_output + " %"" + cs + "%".%N")
-					print (" cursor token:%"" + cs + "%".%N")
-	--				print (" editing token:%"" + s + "%".%N")
+					dbg_print ("Execute linked editing [pos=" + pos.out + "].%N")
+					dbg_print (" editing token " + l_editing_token.debug_output + " %"" + cs + "%".%N")
+					dbg_print (" cursor token:%"" + cs + "%".%N")
+	--				dbg_print (" editing token:%"" + s + "%".%N")
 
 					across
 						lst as ic
 					loop
 						tok := ic.item.token
 						if is_editing_token (ic.item) then
-							print ("%N!" + ic.item.debug_output + " [off=" + off.out + ",diff="+diff.out+"] Editing !!!%N")
+							dbg_print ("%N!" + ic.item.debug_output + " [off=" + off.out + ",diff="+diff.out+"] Editing !!!%N")
 						else
 							ic.item.start_pos := ic.item.start_pos + off
 							ic.item.end_pos := ic.item.end_pos + off
 							diff := s.count - (ic.item.end_pos - ic.item.start_pos)
 
 							txt.replace_for_replace_all (ic.item.start_pos, ic.item.end_pos, s)
-							print ("%N " + ic.item.debug_output + " [off=" + off.out + ",diff="+diff.out+"] %"" + "..." + "%" replaced with %""+ s +"%".%N")
+							dbg_print ("%N " + ic.item.debug_output + " [off=" + off.out + ",diff="+diff.out+"] %"" + "..." + "%" replaced with %""+ s +"%".%N")
 --							txt.select_region (ic.item.start_pos, ic.item.end_pos)
---							print ("%N " + ic.item.debug_output + " [off=" + off.out + ",diff="+diff.out+"] %"" + txt.selected_wide_string + "%" replaced with %""+ s +"%".%N")
+--							dbg_print ("%N " + ic.item.debug_output + " [off=" + off.out + ",diff="+diff.out+"] %"" + txt.selected_wide_string + "%" replaced with %""+ s +"%".%N")
 ----							txt.replace_selection (s)
 --							txt.disable_selection
 							off := off + diff
@@ -188,7 +193,7 @@ feature -- Execute
 --					editor.flush
 
 				else
-					print ("Execute linked editing outside editing token %"" + txt.cursor.token.wide_image + "%"!!!%N")
+					dbg_print ("Execute linked editing outside editing token %"" + txt.cursor.token.wide_image + "%"!!!%N")
 					finish
 				end
 			end
@@ -213,7 +218,6 @@ feature -- Execute
 			pos: INTEGER
 		do
 			if attached linked_tokens as lst then
---				editor.flush
 				txt := text
 				pos := txt.cursor.pos_in_text
 				across
@@ -239,7 +243,7 @@ feature {NONE} -- Implementation
 		do
 			if a_item /= Void and attached editing_token as l_editing_token then
 				Result := a_item.start_pos = l_editing_token.start_pos --and l_editing_token.end_pos <= a_item.end_pos
-				print (" " + l_editing_token.debug_output + " Check is_editing_token (" + a_item.debug_output + ") ? : " + Result.out + " .%N")
+				dbg_print (" " + l_editing_token.debug_output + " Check is_editing_token (" + a_item.debug_output + ") ? : " + Result.out + " .%N")
 			end
 		end
 
@@ -247,7 +251,7 @@ feature {NONE} -- Implementation
 		do
 			if a_pos_in_text > 0 and attached editing_token as l_editing_token then
 				Result := l_editing_token.start_pos <= a_pos_in_text and a_pos_in_text <= l_editing_token.end_pos
-				print (" " + l_editing_token.debug_output + " Check is_valid_editing_position (" + a_pos_in_text.out + ") ? : " + Result.out + " .%N")
+				dbg_print (" " + l_editing_token.debug_output + " Check is_valid_editing_position (" + a_pos_in_text.out + ") ? : " + Result.out + " .%N")
 			end
 		end
 
@@ -275,8 +279,8 @@ feature {NONE} -- Implementation
 				create l_editing_token.make (l_curr_line, l_curr_token, l_curr_token.pos_in_text, l_curr_token.pos_in_text + l_curr_token.length)
 				editing_token := l_editing_token
 
-				print ("%NGet tokens %"" + l_varname + "%":%N")
-				print (" -!" + l_editing_token.debug_output + " -> %"" + l_editing_token.token.wide_image + "%"%N")
+				dbg_print ("%NGet tokens %"" + l_varname + "%":%N")
+				dbg_print (" -!" + l_editing_token.debug_output + " -> %"" + l_editing_token.token.wide_image + "%"%N")
 
 				from
 					l_line := l_curr_line
@@ -286,7 +290,7 @@ feature {NONE} -- Implementation
 				loop
 					if tok.wide_image.is_case_insensitive_equal (l_varname) then
 						create l_item.make (l_line, tok, tok.pos_in_text, tok.pos_in_text + tok.length)
-						print (" - " + l_item.debug_output + " -> %"" + tok.wide_image + "%"%N")
+						dbg_print (" - " + l_item.debug_output + " -> %"" + tok.wide_image + "%"%N")
 						l_linked_tokens.force (l_item)
 					end
 					tok := tok.next
@@ -307,7 +311,7 @@ feature {NONE} -- Implementation
 				loop
 					if tok.wide_image.is_case_insensitive_equal (l_varname) then
 						create l_item.make (l_line, tok, tok.pos_in_text, tok.pos_in_text + tok.length)
-						print (" - " + l_item.debug_output + " -> %"" + tok.wide_image + "%"%N")
+						dbg_print (" - " + l_item.debug_output + " -> %"" + tok.wide_image + "%"%N")
 						l_linked_tokens.put_front (l_item)
 					end
 					tok := tok.previous
