@@ -88,7 +88,6 @@ feature -- Access
 		local
 			l_locals: STRING_32
 			l_code: STRING_32
-			l_code_tb: CODE_TEMPLATE_BUILDER
 		once
 			l_locals := locals
 			l_code := code
@@ -219,6 +218,7 @@ feature {NONE} -- Template implementation.
 			l_name: STRING_32
 			n: NATURAL
 			l_context_name: READABLE_STRING_GENERAL
+			l_rot: STRING_TABLE [STRING]
 		do
 				l_context_name := context_variable_name
 
@@ -232,7 +232,9 @@ feature {NONE} -- Template implementation.
 				create l_code_tb
 				l_locals := l_code_tb.locals (e_feature)
 				l_arguments := l_code_tb.arguments (e_feature)
-				l_read_only_locals := l_code_tb.read_only_locals (e_feature)
+				l_code_tb.process_read_only_locals (e_feature)
+				l_read_only_locals := l_code_tb.read_only_locals
+
 
 				create Result.make_empty
 				across
@@ -293,7 +295,7 @@ feature {NONE} -- Template implementation.
 							Result.append (": ")
 							Result.append_string_general (ic.item)
 						end
-					elseif l_read_only_locals /= Void and then l_read_only_locals.has (ic.key) and then not l_context_name.is_case_insensitive_equal (ic.key) then 
+					elseif l_read_only_locals /= Void and then l_read_only_locals.has (ic.key) and then not l_context_name.is_case_insensitive_equal (ic.key) then
 							-- The current local variable from the template has the same name as a read only variable
 							-- We need to generate a new variable for the template.
 						from

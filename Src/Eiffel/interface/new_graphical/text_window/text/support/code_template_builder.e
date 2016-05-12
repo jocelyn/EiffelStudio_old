@@ -13,6 +13,26 @@ inherit
 
 	SHARED_STATELESS_VISITOR
 
+	AST_ITERATOR
+		redefine
+			process_object_test_as,
+			process_loop_as
+		end
+
+feature -- Reset
+
+	reset_locals
+		do
+			read_only_locals := Void
+			is_context_local := True
+		end
+
+	reset_locals_template
+		do
+			read_only_locals_template := Void
+			is_context_local := False
+		end
+
 feature -- Access
 
 	arguments (e_feature: E_FEATURE): detachable STRING_TABLE [TYPE_A]
@@ -78,37 +98,62 @@ feature -- Access
 			end
 		end
 
-	read_only_locals (e_feature: E_FEATURE): STRING_TABLE [STRING]
+	read_only_locals: STRING_TABLE [STRING]
+			-- Last read only locals names.
+
+	read_only_locals_template: STRING_TABLE [STRING]
+			-- Last read only locals names from code template
+
+feature -- Process
+
+	process_read_only_locals (e_feature: E_FEATURE)
 			-- Given a feature `e_feature' return the names of the locals to
 			-- `across', `object test locals'.
 		do
-			if
-				attached {BODY_AS} e_feature.ast.body as l_body and then
-				attached {ROUTINE_AS} l_body.content as l_content and then
-				attached {DO_AS} l_content.routine_body as l_routine_body and then
-				attached {EIFFEL_LIST [INSTRUCTION_AS]} l_routine_body.compound as l_compound
-			then
-				Result := compute_read_only_locals (l_compound)
-			else
-				create Result.make (0)
+			reset_locals
+			if attached {BODY_AS} e_feature.ast.body as l_body then
+				l_body.process (Current)
 			end
 		end
 
-	read_only_locals_template (a_code: STRING_32): detachable STRING_TABLE [STRING]
+	process_only_locals_template (a_code: STRING_32)
 			-- Given a code template `a_code' return the names of the locals to
 			-- `across', `object test locals
 		do
+			reset_locals_template
 			if
 				attached {FEATURE_AS} feature_template_ast (a_code) as l_feature_ast and then
-				attached {BODY_AS} l_feature_ast.body as l_body and then
-				attached {ROUTINE_AS} l_body.content as l_content and then
-				attached {DO_AS} l_content.routine_body as l_routine_body and then
-				attached {EIFFEL_LIST [INSTRUCTION_AS]} l_routine_body.compound as l_compound
+				attached {BODY_AS} l_feature_ast.body as l_body
 			then
-				Result := compute_read_only_locals (l_compound)
+				l_body.process (Current)
 			end
 		end
 
+
+feature -- AST Iterator
+
+	process_object_test_as (l_as: OBJECT_TEST_AS)
+			-- Process `l_as'.
+		local
+			l_name: detachable ID_AS
+		do
+			l_name := l_as.name
+			if l_name /= Void then
+				set_object_test_local (l_name.name_32)
+			end
+			Precursor (l_as)
+		end
+
+	process_loop_as (l_as: LOOP_AS)
+		do
+			if
+				attached {ITERATION_AS} l_as.iteration as l_iteration and then
+				attached {ID_AS} l_iteration.identifier as l_id
+			then
+				set_object_test_local (l_id.name_32)
+			end
+			Precursor (l_as)
+		end
 
 feature -- Conformance
 
@@ -167,41 +212,9 @@ feature -- Conformance
 
 feature {NONE} -- Template Implementation.
 
-	compute_read_only_locals (a_compound: EIFFEL_LIST [INSTRUCTION_AS]): STRING_TABLE[STRING]
-			-- Return a list of read only names in the compound `a_compound'.
-		do
-			create Result.make_caseless (2)
-			across a_compound as ic  loop
-				if attached {IF_AS} ic.item as l_if then
-					evaluate_if_as (l_if.condition, Result)
-				end
-				if attached {LOOP_AS} ic.item as l_loop then
-					if
-						attached {ITERATION_AS} l_loop.iteration as l_iteration and then
-						attached {ID_AS} l_iteration.identifier as l_id
-					then
-						Result.force ("", l_id.name_32)
-					end
-				end
-			end
-		end
-
-	evaluate_if_as (a_condition: EXPR_AS; a_result: STRING_TABLE [STRING])
-			-- Populate object test locals names from `a_condition' into `a_result'.
-		do
-			if
-				attached {OBJECT_TEST_AS} a_condition as l_cond
-			then
-				a_result.force ("", l_cond.name.name_32)
-			else
-				if
-					attached {BIN_AND_THEN_AS} a_condition as l_condition
-				then
-					evaluate_if_as (l_condition.left, a_result)
-					evaluate_if_as (l_condition.right, a_result)
-				end
-			end
-		end
+	is_context_local: BOOLEAN
+			-- True if context locals from Eiffel class feature,
+			-- False if it's context locals from code template.
 
 	feature_template_ast (a_code: STRING_32): FEATURE_AS
 			-- Return a feature AST from the code template `a_code'.
@@ -212,6 +225,26 @@ feature {NONE} -- Template Implementation.
 			epw.parse_with_option_32 (entity_feature_parser,{STRING_32} "feature " + a_code, create {CONF_OPTION}, True, Void)
 			if attached {FEATURE_AS} epw.ast_node as l_feature_node then
 				Result := l_feature_node
+			end
+		end
+
+	set_object_test_local (a_name: READABLE_STRING_GENERAL)
+		do
+			if is_context_local then
+				if read_only_locals /= Void then
+					read_only_locals.force ("", a_name)
+				else
+					create read_only_locals.make_caseless (2)
+					read_only_locals.force ("", a_name)
+				end
+			else
+				check not is_context_local end
+				if read_only_locals_template /= Void then
+					read_only_locals_template.force ("", a_name)
+				else
+					create read_only_locals_template.make_caseless (2)
+					read_only_locals_template.force ("", a_name)
+				end
 			end
 		end
 
