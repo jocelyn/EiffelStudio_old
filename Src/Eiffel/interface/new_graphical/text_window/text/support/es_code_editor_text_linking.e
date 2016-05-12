@@ -75,7 +75,7 @@ feature -- Execute
 					dbg_print (" - " + ic.item.debug_output + " -> %"" + tok.wide_image + "%"%N")
 					tok.set_background_color (bgcol)
 				end
-				refresh_related_lines
+				refresh_related_lines (True)
 				txt.cursor.go_to_position (pos)
 				txt.disable_selection
 
@@ -101,30 +101,29 @@ feature -- Execute
 						dbg_print (" - " + ic.item.debug_output + " -> %"" + tok.wide_image + "%"%N")
 						tok.set_background_color (Void)
 					end
-					refresh_related_lines
+					refresh_related_lines (False)
 					curs.go_to_position (pos)
 				end
-
-				linked_tokens := Void
 			end
 			editing_token := Void
 		end
 
-	execute (op: detachable READABLE_STRING_8)
+	execute (op: detachable READABLE_STRING_8; a_size_diff: INTEGER)
 		local
-			bgcol: EV_COLOR
 			tok: detachable EDITOR_TOKEN
-			diff,off: INTEGER
+			e_diff, diff,off: INTEGER
 			txt: like text
 			s,cs: STRING_32
-			pos,i,j,k: INTEGER
+			pos,l_old_editing_start_pos,l_old_editing_end_pos,k: INTEGER
 		do
 			if
 				attached linked_tokens as lst and
 			 	attached editing_token as l_editing_token
 			then
 				txt := text
-				create bgcol.make_with_8_bit_rgb (255, 0, 0)
+				l_old_editing_start_pos := l_editing_token.start_pos
+				l_old_editing_end_pos := l_editing_token.end_pos
+				l_editing_token.end_pos := l_editing_token.end_pos + a_size_diff
 --				l_editing_token.line.update_token_information
 
 				pos := txt.cursor.pos_in_text
@@ -146,23 +145,17 @@ feature -- Execute
 					if k = 0 then
 						k := l_editing_token.start_pos
 					end
-					i := l_editing_token.start_pos
-					j := l_editing_token.end_pos
+--					i := l_editing_token.start_pos
+--					j := l_editing_token.end_pos
 
 					l_editing_token.start_pos := k
 					l_editing_token.end_pos := l_editing_token.start_pos + tok.length
-					off := (l_editing_token.end_pos - l_editing_token.start_pos) - (j - i)
+					e_diff := (l_editing_token.end_pos - l_editing_token.start_pos) - (l_old_editing_end_pos - l_old_editing_start_pos)
 					s := cs
-	--				txt.select_region (i,j)
-	--				s := txt.selected_wide_string
-	--				txt.disable_selection
-	--				off := 1
-	--				txt.cursor.go_to_position (pos)
 
 					dbg_print ("Execute linked editing [pos=" + pos.out + "].%N")
 					dbg_print (" editing token " + l_editing_token.debug_output + " %"" + cs + "%".%N")
 					dbg_print (" cursor token:%"" + cs + "%".%N")
-	--				dbg_print (" editing token:%"" + s + "%".%N")
 
 					across
 						lst as ic
@@ -170,28 +163,23 @@ feature -- Execute
 						tok := ic.item.token
 						if is_editing_token (ic.item) then
 							dbg_print ("%N!" + ic.item.debug_output + " [off=" + off.out + ",diff="+diff.out+"] Editing !!!%N")
+							off := off + e_diff
 						else
 							ic.item.start_pos := ic.item.start_pos + off
 							ic.item.end_pos := ic.item.end_pos + off
 							diff := s.count - (ic.item.end_pos - ic.item.start_pos)
 
+							dbg_print ("%N " + ic.item.debug_output + " [off=" + off.out + ",diff="+diff.out+"] %"" + ic.item.text + "%" replaced with %""+ s +"%".%N")
 							txt.replace_for_replace_all (ic.item.start_pos, ic.item.end_pos, s)
-							dbg_print ("%N " + ic.item.debug_output + " [off=" + off.out + ",diff="+diff.out+"] %"" + "..." + "%" replaced with %""+ s +"%".%N")
---							txt.select_region (ic.item.start_pos, ic.item.end_pos)
---							dbg_print ("%N " + ic.item.debug_output + " [off=" + off.out + ",diff="+diff.out+"] %"" + txt.selected_wide_string + "%" replaced with %""+ s +"%".%N")
-----							txt.replace_selection (s)
---							txt.disable_selection
+							ic.item.text := s
+
 							off := off + diff
 							ic.item.end_pos := ic.item.end_pos + diff
-							tok.set_background_color (bgcol)
 							ic.item.line.update_token_information
 						end
 					end
-					refresh_related_lines
+					refresh_related_lines (True)
 					txt.cursor.go_to_position (pos)
-	--				editor.update_line_and_token_info
---					editor.flush
-
 				else
 					dbg_print ("Execute linked editing outside editing token %"" + txt.cursor.token.wide_image + "%"!!!%N")
 					finish
@@ -212,19 +200,27 @@ feature -- Execute
 			end
 		end
 
-	refresh_related_lines
+	refresh_related_lines (l_is_editing: BOOLEAN)
 		local
 			txt: like text
 			pos: INTEGER
+			bgcolor: detachable EV_COLOR
 		do
 			if attached linked_tokens as lst then
+				if l_is_editing then
+					create bgcolor.make_with_8_bit_rgb (210, 255, 210)
+				else
+					create bgcolor.make_with_8_bit_rgb (255, 255, 255)
+					bgcolor := Void
+				end
 				txt := text
 				pos := txt.cursor.pos_in_text
 				across
 					lst as ic
 				loop
-					if ic.item.end_pos > 0 then
-						txt.cursor.go_to_position (ic.item.end_pos)
+					if ic.item.start_pos > 0 then
+						txt.cursor.go_to_position (ic.item.start_pos)
+						txt.cursor.token.set_background_color (bgcolor)
 						editor.redraw_current_line
 					elseif attached ic.item.line as l_line and then l_line.is_valid then
 						txt.go_i_th (l_line.index)
@@ -250,7 +246,7 @@ feature {NONE} -- Implementation
 	is_valid_editing_position (a_pos_in_text: INTEGER): BOOLEAN
 		do
 			if a_pos_in_text > 0 and attached editing_token as l_editing_token then
-				Result := l_editing_token.start_pos <= a_pos_in_text and a_pos_in_text <= l_editing_token.end_pos
+				Result := l_editing_token.start_pos <= a_pos_in_text and a_pos_in_text < l_editing_token.end_pos
 				dbg_print (" " + l_editing_token.debug_output + " Check is_valid_editing_position (" + a_pos_in_text.out + ") ? : " + Result.out + " .%N")
 			end
 		end

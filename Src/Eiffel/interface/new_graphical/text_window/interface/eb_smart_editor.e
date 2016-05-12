@@ -1884,7 +1884,7 @@ feature {NONE} -- Code completable implementation
 
 			refresh
 			create {ES_CODE_EDITOR_FEATURE_LINKING} l_code_editor.make (txt.selected_wide_string, a_template.e_feature)
-			l_code_editor.execute (Void)
+			l_code_editor.execute (Void, 0)
 		end
 
 	select_from_cursor_to_saved
