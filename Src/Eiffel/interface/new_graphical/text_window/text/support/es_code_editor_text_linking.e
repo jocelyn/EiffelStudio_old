@@ -133,7 +133,7 @@ feature -- Execute
 					tok := txt.cursor.token.previous
 					update_pos_in_text (tok)
 					if
-						tok.pos_in_text > 0 and then
+						tok.pos_in_text <= 0 or else
 						not is_valid_editing_position (tok.pos_in_text)
 					then
 						tok := Void
