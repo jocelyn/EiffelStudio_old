@@ -17,6 +17,7 @@ feature {NONE} -- Initialization
 
 	make (a_line: EDITOR_LINE; a_token: EDITOR_TOKEN; a_start_pos, a_end_pos: INTEGER)
 		do
+			text := a_token.wide_image
 			line := a_line
 			token := a_token
 			start_pos := a_start_pos
@@ -24,6 +25,8 @@ feature {NONE} -- Initialization
 		end
 
 feature -- Access
+
+	text: READABLE_STRING_32 assign set_text
 
 	line: EDITOR_LINE assign set_line
 
@@ -34,6 +37,11 @@ feature -- Access
 	end_pos: INTEGER assign set_end_pos
 
 feature -- Element change
+
+	set_text (a_text: READABLE_STRING_32)
+		do
+			text := a_text
+		end
 
 	set_line (a_line: EDITOR_LINE)
 		do

@@ -23,7 +23,7 @@ feature -- Execution
 		do
 		end
 
-	execute (op: detachable READABLE_STRING_8)
+	execute (op: detachable READABLE_STRING_8; a_size_diff: INTEGER)
 		do
 		end
 

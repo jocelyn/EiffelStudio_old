@@ -756,7 +756,7 @@ feature -- Syntax completion
 				inspect c
 				when 'a'..'z', 'A'..'Z', '0'..'9', '_' then
 					Precursor (c)
-					lnk.execute (insert_char_id)
+					lnk.execute (insert_char_id, +1)
 				else
 					disable_linked_editing
 					Precursor (c)
@@ -774,7 +774,7 @@ feature -- Syntax completion
 				lnk.is_active
 			then
 				Precursor
-				lnk.execute (delete_char_id)
+				lnk.execute (delete_char_id, -1)
 			else
 				Precursor
 			end
@@ -788,7 +788,7 @@ feature -- Syntax completion
 				lnk.is_active
 			then
 				Precursor
-				lnk.execute (back_delete_char_id)
+				lnk.execute (back_delete_char_id, -1)
 			else
 				Precursor
 			end
