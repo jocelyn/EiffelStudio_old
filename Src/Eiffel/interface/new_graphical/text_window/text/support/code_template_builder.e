@@ -130,7 +130,6 @@ feature -- Process
 			end
 		end
 
-
 feature -- AST Iterator
 
 	process_object_test_as (l_as: OBJECT_TEST_AS)

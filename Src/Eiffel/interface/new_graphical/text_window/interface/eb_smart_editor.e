@@ -1805,14 +1805,17 @@ feature {NONE} -- Code completable implementation
 			l_locals: READABLE_STRING_GENERAL
 			txt: like text_displayed
 			l_local_pos, l_start_pos, p: INTEGER
-			l_modifier: ES_FEATURE_TEMPLATE_TEXT_AST_MODIFIER
-			l_code_editor: ES_CODE_EDITOR_LINKING
+			l_code_texts: TUPLE [locals: STRING_32; code: STRING_32]
 		do
+				-- local varianles and code from template
+			l_code_texts := a_template.code_texts
+
 			txt := text_displayed
 
 				-- Body
 			l_pos := txt.cursor.pos_in_characters
-			l_template := a_template.code_texts.code
+			l_template := l_code_texts.code
+
 
 				-- TODO: remove previous token!
 			if
@@ -1843,7 +1846,7 @@ feature {NONE} -- Code completable implementation
 					-- FIXME: check for inline agent !
 				txt.find_feature_named (f.name_32)
 				if txt.found_feature then
-					l_locals := a_template.code_texts.locals
+					l_locals := l_code_texts.locals
 					l_feat_pos := txt.cursor.pos_in_characters
 
 					txt.search_string_from_cursor ("local")
@@ -1883,8 +1886,6 @@ feature {NONE} -- Code completable implementation
 			txt.select_region (l_feat_pos, l_pos)
 
 			refresh
-			create {ES_CODE_EDITOR_FEATURE_LINKING} l_code_editor.make (txt.selected_wide_string, a_template.e_feature)
-			l_code_editor.execute (Void)
 		end
 
 	select_from_cursor_to_saved

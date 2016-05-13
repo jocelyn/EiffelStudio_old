@@ -91,7 +91,11 @@ feature -- Access
 		do
 			l_locals := locals
 			l_code := code
-			Result := [l_locals, l_code]
+			if attached update_tokens (l_code, l_locals) as l_new_code then
+				Result := [l_locals, l_new_code]
+			else
+				Result := [l_locals, l_code]
+			end
 		end
 
 	local_definitions: STRING_TABLE [STRING]
@@ -179,6 +183,27 @@ feature {NONE} -- String Utility
 			Result.append (i.out)
 		end
 
+	new_name_locals(a_string: STRING_32): STRING_32
+			-- Create a new name
+		local
+			l_r: RANDOM
+			i: INTEGER
+			l_time: TIME
+			l_seed: INTEGER
+		do
+			create l_time.make_now
+		    l_seed := l_time.hour
+		    l_seed := l_seed * 60 + l_time.minute
+		    l_seed := l_seed * 60 + l_time.second
+		    l_seed := l_seed * 1000 + l_time.milli_second
+		  	create l_r.set_seed (l_seed)
+
+		   	i:= (l_r.item \\ 20) + 21
+			create Result.make_from_string (a_string)
+			Result.append (i.out)
+		end
+
+
 feature {NONE} -- Template implementation.
 
 	code: STRING_32
@@ -216,9 +241,7 @@ feature {NONE} -- Template implementation.
 			l_code_tb: CODE_TEMPLATE_BUILDER
 			l_value: CODE_SYMBOL_VALUE
 			l_name: STRING_32
-			n: NATURAL
 			l_context_name: READABLE_STRING_GENERAL
-			l_rot: STRING_TABLE [STRING]
 		do
 				l_context_name := context_variable_name
 
@@ -375,6 +398,80 @@ feature -- Setting
 			insert_name_set: insert_name /= Void and then insert_name.is_equal (a_name)
 		end
 
+feature -- Implementation: Update tokens
+
+	update_tokens (a_code: STRING_32; a_locals: STRING_32): STRING_32
+			-- Update tokens: read only locals token found in
+			-- the template.
+			--! For example if we have a template like this
+			--! ${low}  := ${a}.lower
+			--! ${high} := ${a}.upper
+			--! across
+			--!	(${low} + 1) |..| ${high} as i
+			--!	from
+			--!		${target} := ${a}[${low}]
+			--!	loop
+			--!		${target} := ${target}.max (${a}[i.item])
+			--!	end
+			--! the variable i is already used in the context (ie the feature)
+			--! we rename it.
+		local
+			l_scanner: EDITOR_EIFFEL_SCANNER
+			l_token: EDITOR_TOKEN
+			l_code_tb: CODE_TEMPLATE_BUILDER
+			l_locals: STRING_TABLE [TYPE_AS]
+			l_arguments: STRING_TABLE [TYPE_A]
+			l_read_only_locals_template: STRING_TABLE [STRING]
+			l_rename_table: STRING_TABLE [STRING]
+			l_name: STRING_32
+		do
+				-- Prepare table with renaming read only locals.
+
+			create l_code_tb
+			l_locals := l_code_tb.locals (e_feature)
+			l_arguments := l_code_tb.arguments (e_feature)
+			l_code_tb.process_only_locals_template (feature_template_code (a_code, a_locals))
+			l_read_only_locals_template := l_code_tb.read_only_locals_template
+
+			create l_rename_table.make_caseless (2)
+			across l_read_only_locals_template  as ic
+			loop
+				if l_locals.has (ic.key) or else l_arguments.has (ic.key) then
+					from
+						l_name := new_name_locals (ic.key.as_string_32)
+					until
+						not l_locals.has (l_name) and then
+						not l_arguments.has (l_name)
+					loop
+						l_name := new_name_locals (ic.key.as_string_32)
+					end
+					l_rename_table.force (l_name, ic.key)
+				end
+			end
+
+				-- Rename loclas if needed
+
+			if not l_rename_table.is_empty  then
+				create Result.make_empty
+				create l_scanner.make
+				from
+					l_scanner.execute (a_code)
+					l_token := l_scanner.first_token
+				until
+					l_token = Void
+				loop
+					if l_rename_table.has (l_token.wide_image) then
+						Result.append (l_rename_table.item (l_token.wide_image))
+					else
+						Result.append (l_token.wide_image)
+					end
+					l_token := l_token.next
+				end
+			end
+		end
+
+
+
 feature {NONE} -- Implementation: STONE
 
 	internal_stone: FEATURE_STONE
@@ -463,16 +560,6 @@ feature {NONE} -- Implementation
 			Result.append_string ("%Nend")
 			Result.adjust
 		end
-
-
-	feature_template: STRING = "[
-			f_567
-				local
-					$locals
-				do
-					$template
-				end
-	]"
 
 
 ;note
