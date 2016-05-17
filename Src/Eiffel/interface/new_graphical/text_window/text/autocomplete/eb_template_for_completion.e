@@ -82,7 +82,6 @@ feature -- Access
 	template: CODE_TEMPLATE
 			-- Full template to insert in editor
 
-
 	code_texts: TUPLE [locals: STRING_32; code: STRING_32]
 			-- Local and code from template.
 		local
@@ -91,6 +90,7 @@ feature -- Access
 		do
 			l_locals := locals
 			l_code := code
+			add_comments (l_code)
 			if attached update_tokens (l_code, l_locals) as l_new_code then
 				Result := [l_locals, l_new_code]
 			else
@@ -478,7 +478,52 @@ feature {NONE} -- Implementation: STONE
 
 feature {NONE} -- Implementation
 
+
+	add_comments (a_code: STRING_32)
+			-- Add comments to the code `a_code' iff
+			-- the tag description is filled in the
+			-- Template definition in the metada section.
+			-- In other case just add default
+			-- start and end comments for the template.
+			--! <metadata> ... <description>Some description</description> ....</metadata>
+		local
+			l_string: STRING
+		do
+			if attached associated_template_definition.metadata.description as l_description then
+
+				if
+					attached l_description.split ('%N') as l_lines and then l_lines.count > 1
+				then
+					create l_string.make_from_string ("%N%T%T%T")
+					across l_lines as ic loop
+						l_string.append("%N%T%T%T%T-- ")
+						l_string.append(ic.item)
+					end
+					l_string.append (" `" + target_name + "'")
+					a_code.prepend (l_string)
+				else
+					if l_description.is_empty then
+						a_code.prepend ("%T%T%T")
+						a_code.prepend ("%N%T%T%T%T-- start of template%N")
+					else
+						a_code.prepend ("%N%T%T%T")
+						a_code.prepend (" `" + target_name + "'")
+						a_code.prepend (l_description)
+						a_code.prepend ("--")
+						a_code.prepend ("%N%T%T%T%T")
+					end
+				end
+				a_code.append ("%T%T%T%T-- end of template%N")
+			else
+				a_code.prepend ("%N%T%T%T")
+				a_code.prepend ("%T%T%T%T-- start of template%N")
+				a_code.append ("%T%T%T%T-- end of template%N")
+			end
+		end
+
+
 	context_variable_name: READABLE_STRING_GENERAL
+				-- Name of the context variable in the template.
 		local
 			l_context: STRING_32
 			l_cb: CODE_TEMPLATE_BUILDER
