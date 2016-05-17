@@ -1,4 +1,4 @@
-note
+﻿note
 	description: "[
 		XML parser callbacks for creating a in-memory model of a code template.
 		
@@ -182,9 +182,13 @@ feature {NONE} -- Process
 				process_metadata_shortcut
 			when t_category then
 				process_metadata_category
-			when t_literal then
-					-- Clear last literal declaration
+			when t_literal, t_object then
+					-- Clear last literal or object declaration.
 				last_declaration := Void
+			when t_default then
+				if attached {CODE_LITERAL_DECLARATION} last_declaration as literal then
+					process_declaration_literal_default (literal)
+				end
 			when t_template then
 				process_templates_template
 			when t_conforms_to then
@@ -423,16 +427,12 @@ feature {NONE} -- Production processing
 			end
 		end
 
-	process_declaration_literal_default
-			-- Processes a declaration literal's default value.
+	process_declaration_literal_default (literal: CODE_LITERAL_DECLARATION)
+			-- Processes a default value element of a declaration `literal'.
 		require
 			last_code_template_definition_attached: attached last_code_template_definition
-			last_declaration_attached: last_declaration /= Void
-			last_declaration_is_literal: attached {CODE_LITERAL_DECLARATION} last_declaration
 		do
-			if not current_content.is_empty and then (attached {CODE_LITERAL_DECLARATION} last_declaration as l_literal) then
-				l_literal.default_value := current_content
-			end
+			literal.default_value := current_content
 		end
 
 	process_templates

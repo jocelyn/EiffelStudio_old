@@ -1,4 +1,4 @@
-note
+﻿note
 	description: "[
 		A dictionary of code template definition file XML tag, attribute and value names.
 	]"
