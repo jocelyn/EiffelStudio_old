@@ -1,7 +1,7 @@
 note
 	description: "Summary description for {ES_CODE_EDITOR_LINKED_ITEM}."
-	date: "$Date$"
-	revision: "$Revision$"
+	date: "$Date: 2016-05-17 22:44:45 +0200 (mar., 17 mai 2016) $"
+	revision: "$Revision: 98792 $"
 
 class
 	ES_CODE_EDITOR_LINKED_ITEM
