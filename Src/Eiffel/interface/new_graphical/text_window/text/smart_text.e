@@ -7,7 +7,6 @@ note
 	]"
 	legal: "See notice at end of class."
 	status: "See notice at end of class."
-	author: "Etienne Amodeo"
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -19,8 +18,7 @@ inherit
 		export
 			{EB_SMART_EDITOR} on_text_edited
 		redefine
-			insert_char,
-			delete_char, back_delete_char,
+			insert_string, insert_char, delete_char, back_delete_char,
 			restore_tokens_properties,
 			restore_tokens_properties_one_line,
 			reset_text,
@@ -71,21 +69,23 @@ feature -- Access
 
 feature -- Edit linking mode
 
-	enable_linked_editing (a_editor: EB_EDITOR)
+	enable_linked_editing (a_editor: EB_EDITOR; a_pos_in_text: INTEGER; a_regions: detachable LIST [TUPLE [start_pos,end_pos: INTEGER]])
+			-- Activate linked edit at position `a_pos_in_text' if set, otherwise at cursor.
+			-- And if `a_regions' is not empty, limit the impact token in those regions.
 		local
-			l_linking: ES_CODE_EDITOR_TEXT_LINKING
+			l_linking: ES_CODE_EDITOR_LINKED_EDITING
 		do
 			if attached linked_editing as e then
 				disable_linked_editing
 			end
-			create l_linking.make (Current, a_editor)
+			create l_linking.make (Current, a_editor, a_pos_in_text, a_regions)
 			linked_editing := l_linking
 		end
 
 	disable_linked_editing
 		do
 			if attached linked_editing as e then
-				e.finish
+				e.terminate
 				linked_editing := Void
 			end
 		end
@@ -746,8 +746,35 @@ feature -- Syntax completion
 			end
 		end
 
+	insert_string (txt: READABLE_STRING_GENERAL)
+			-- <Precursor>.
+		local
+			l_diff: INTEGER
+		do
+			if
+				attached linked_editing as lnk and then
+				lnk.is_active
+			then
+				if is_word (txt) then
+					l_diff := txt.count
+					if not selection_is_empty then
+						l_diff := l_diff - (selected_wide_string.count)
+					end
+					Precursor (txt)
+					lnk.on_insertion (l_diff)
+				else
+					disable_linked_editing
+					Precursor (txt)
+				end
+			else
+				Precursor (txt)
+			end
+		end
+
 	insert_char (c: CHARACTER_32)
-			-- Precursor.
+			-- <Precursor>.
+		local
+			l_diff: INTEGER
 		do
 			if
 				attached linked_editing as lnk and then
@@ -755,8 +782,12 @@ feature -- Syntax completion
 			then
 				inspect c
 				when 'a'..'z', 'A'..'Z', '0'..'9', '_' then
+					l_diff := +1
+					if not selection_is_empty then
+						l_diff := l_diff - (selected_wide_string.count)
+					end
 					Precursor (c)
-					lnk.execute (insert_char_id, +1)
+					lnk.on_insertion (l_diff)
 				else
 					disable_linked_editing
 					Precursor (c)
@@ -768,13 +799,20 @@ feature -- Syntax completion
 
 	delete_char
 			-- <Precursor>.
+		local
+			l_diff: INTEGER
 		do
 			if
 				attached linked_editing as lnk and then
 				lnk.is_active
 			then
+				if selection_is_empty then
+					l_diff := -1
+				else
+					l_diff := l_diff - (selected_wide_string.count)
+				end
 				Precursor
-				lnk.execute (delete_char_id, -1)
+				lnk.on_deletion (l_diff)
 			else
 				Precursor
 			end
@@ -782,21 +820,47 @@ feature -- Syntax completion
 
 	back_delete_char
 			-- <Precursor>.
+		local
+			l_diff: INTEGER
 		do
 			if
 				attached linked_editing as lnk and then
 				lnk.is_active
 			then
+				if selection_is_empty then
+					l_diff := -1
+				else
+					l_diff := l_diff - (selected_wide_string.count)
+				end
 				Precursor
-				lnk.execute (back_delete_char_id, -1)
+				lnk.on_deletion (l_diff)
 			else
 				Precursor
 			end
 		end
 
-	insert_char_id: STRING = "InsChar"
-	delete_char_id: STRING = "DelChar"
-	back_delete_char_id: STRING = "BackDelChar"
+feature {NONE} -- Helpers
+
+	is_word (a_text: READABLE_STRING_GENERAL): BOOLEAN
+			-- Is `a_text' composed of word character?
+		local
+			i,n: INTEGER
+		do
+			from
+				Result := True
+				i := 1
+				n := a_text.count
+			until
+				i > n or False
+			loop
+				inspect a_text[i]
+				when 'a'..'z', 'A'..'Z', '0'..'9', '_' then
+				else
+					Result := False
+				end
+				i := i + 1
+			end
+		end
 
 feature {NONE} -- Possiblilities provider
 

@@ -1,6 +1,5 @@
 note
 	description: "Summary description for {ES_CODE_EDITOR_LINKED_ITEM}."
-	author: ""
 	date: "$Date$"
 	revision: "$Revision$"
 

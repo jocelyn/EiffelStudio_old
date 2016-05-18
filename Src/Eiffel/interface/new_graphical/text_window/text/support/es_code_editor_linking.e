@@ -1,5 +1,5 @@
 note
-	description: "Get editor tokens and linking tokens from a given feature"
+	description: "Linked token behavior, used for linked editing."
 	date: "$Date$"
 	revision: "$Revision$"
 
@@ -9,26 +9,35 @@ deferred class
 feature -- Access
 
 	is_active: BOOLEAN
-			-- Is linked editing?
+			-- Is linked behavior active?
 		deferred
 		end
 
 feature -- Execution
 
-	begin
+	prepare
+			-- Prepare linking mode.
 		do
 		end
 
-	finish
+	terminate
+			-- Terminate linking mode.
 		do
 		end
 
-	execute (op: detachable READABLE_STRING_8; a_size_diff: INTEGER)
+	on_insertion (a_size_diff: INTEGER)
+			-- On char, string insertion event,
+			-- resulting into a size difference of `a_size_diff'.
 		do
 		end
 
-
-invariant
+	on_deletion (a_size_diff: INTEGER)
+			-- On char, string (or selection) deleted event,
+			-- resulting into a size difference of `a_size_diff'.
+		require
+			a_size_diff < 0
+		do
+		end
 
 note
 	copyright: "Copyright (c) 1984-2016, Eiffel Software"
