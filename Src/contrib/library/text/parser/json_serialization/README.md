@@ -1,4 +1,4 @@
-JSON serialization component:
+JSON serialization library
 
 ## WARNING
 	- the default reflection serializer is requiring to have recursively expanded object (i.e no cycle in references).
